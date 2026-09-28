@@ -10,6 +10,7 @@ export interface Usage {
 
 const COMMAND = /<command-name>\/([\w:.-]+)<\/command-name>/g;
 const SKILL_MD = /\/skills\/([\w.-]+)\/SKILL\.md$/;
+const SKILL_MD_IN_COMMAND = /\/skills\/([\w.-]+)\/SKILL\.md\b/g;
 
 /** `plugin:name` and `dir:name` both count toward `name`. */
 const bare = (skill: string) => skill.split(':').pop() ?? skill;
@@ -37,8 +38,8 @@ interface Line {
 
 /**
  * How often each skill was actually used, read from Claude Code's session
- * transcripts: a Skill tool call, a typed /command, or a Read of its SKILL.md
- * (which is how autoskill has Claude load a skill it just installed).
+ * transcripts: a Skill tool call, a typed /command, or reading its SKILL.md
+ * with Read or in a Bash command (how Claude loads a skill it just installed).
  */
 export async function skillUsage(sinceDays = 365): Promise<Map<string, Usage>> {
   const usage = new Map<string, Usage>();
@@ -68,6 +69,10 @@ export async function skillUsage(sinceDays = 365): Promise<Map<string, Usage>> {
         if (block.name === 'Read' && typeof block.input?.file_path === 'string') {
           const match = SKILL_MD.exec(block.input.file_path);
           if (match?.[1]) record(usage, match[1], at);
+        }
+        // Claude often reads a fresh skill with `cat` instead of Read.
+        if (block.name === 'Bash' && typeof block.input?.command === 'string') {
+          for (const name of new Set([...block.input.command.matchAll(SKILL_MD_IN_COMMAND)].map((m) => m[1]))) if (name) record(usage, name, at);
         }
       }
     }

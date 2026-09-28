@@ -93,11 +93,12 @@ test('usage counts Skill calls, typed commands and SKILL.md reads', async () => 
       line([{ type: 'tool_use', name: 'Skill', input: { skill: 'plugin:notes' } }], '2026-09-02T10:00:00Z'),
       line('<command-name>/verify</command-name>', '2026-09-03T10:00:00Z'),
       line([{ type: 'tool_use', name: 'Read', input: { file_path: `${home}/skills/pdf/SKILL.md` } }], '2026-09-04T10:00:00Z'),
+      line([{ type: 'tool_use', name: 'Bash', input: { command: 'cat ~/.claude/skills/notes/SKILL.md; ls ~/.claude/skills/notes' } }], '2026-09-05T10:00:00Z'),
       'not json',
     ].join('\n'),
   );
   const usage = await skillUsage(3650);
-  assert.deepEqual(usage.get('notes'), { count: 2, last: '2026-09-02T10:00:00Z' });
+  assert.deepEqual(usage.get('notes'), { count: 3, last: '2026-09-05T10:00:00Z' });
   assert.equal(usage.get('verify')?.count, 1);
   assert.equal(usage.get('pdf')?.count, 1);
 });

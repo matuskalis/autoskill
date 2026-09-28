@@ -80,6 +80,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
     case 'stats': {
       const usage = await skillUsage(Number(flag(args, '--days') ?? 90));
       const rows = [...usage].sort((a, b) => b[1].count - a[1].count);
+      console.log('Uses of skills and slash commands, from local transcripts:');
       for (const [name, { count, last }] of rows) console.log(`${String(count).padStart(5)}  ${name}  last ${last.slice(0, 10)}`);
       return;
     }
