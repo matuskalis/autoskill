@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, w
 import { dirname, join } from 'node:path';
 import { fileBytes } from './github.ts';
 import { claudeDir, MARKER, skillsDir } from './paths.ts';
-import { classify } from './safety.ts';
+import { classify, isTextFile } from './safety.ts';
 import { installName, oneLine } from './text.ts';
 import type { CatalogSkill, Risk } from './types.ts';
 
@@ -107,7 +107,7 @@ export async function install(skill: CatalogSkill, options: { yes?: boolean } = 
   // Classify what was actually downloaded, not what the catalog claims.
   const decoder = new TextDecoder();
   const texts: Record<string, string> = {};
-  for (const [path, bytes] of contents) if (path !== 'SKILL.md' && /\.(md|markdown|txt)$/i.test(path)) texts[path] = decoder.decode(bytes);
+  for (const [path, bytes] of contents) if (path !== 'SKILL.md' && isTextFile(path)) texts[path] = decoder.decode(bytes);
   const { risk, reasons } = classify(decoder.decode(skillMd), skill.files, texts);
   if (risk === 'review' && !options.yes) throw new ReviewRequired(skill.id, reasons);
 

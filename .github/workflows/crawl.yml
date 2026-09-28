@@ -20,7 +20,8 @@ jobs:
       - name: Rebuild the catalog
         run: node src/cli.ts crawl --out catalog
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # A fine-grained read-only token raises the limit from 1000 to 5000 calls an hour; optional.
+          GITHUB_TOKEN: ${{ secrets.CRAWL_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Commit if it changed
         run: |
           git add catalog/catalog.json catalog/index.json

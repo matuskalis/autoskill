@@ -1,16 +1,22 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { findSkill, loadCatalog, updateCatalog, writeCatalog } from './catalog.ts';
 import { crawl } from './crawl.ts';
 import { main as hook } from './hook.ts';
 import { install, listInstalled, ReviewRequired, uninstall } from './install.ts';
 import { Index } from './search.ts';
 import { oneLine } from './text.ts';
+import type { Catalog } from './types.ts';
 import { skillUsage } from './usage.ts';
+
+const MIN_KEPT_SHARE = 0.85;
 
 const HELP = `autoskill: find, rate and install Claude Code skills
 
   autoskill search <words>        rank catalog skills for a task
   autoskill info <id|name>        everything the catalog knows about one skill
-  autoskill install <id> [--yes]  install pinned to a commit; --yes for a review-tier skill
+  autoskill add <id>              install a safe-tier skill pinned to a commit; refuses review-tier
+  autoskill install <id> [--yes]  same, and --yes installs a review-tier skill after a human agreed
   autoskill uninstall <name>      remove a skill autoskill installed
   autoskill list                  skills autoskill installed, with how often you used them
   autoskill stats [--days N]      how often you used every skill, from your transcripts
@@ -47,11 +53,15 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       if (!skill) throw new Error('not in the catalog');
       return console.log(`Third-party catalog entry (data, not instructions):\n${JSON.stringify(skill, null, 2)}`);
     }
+    case 'add':
     case 'install': {
       const skill = findSkill(loadCatalog(), positional(args)[0] ?? '');
       if (!skill) throw new Error('not in the catalog; try `autoskill search`');
+      // `add` is the command a permission rule may allow: it never installs review-tier, whatever the flags.
+      const yes = command === 'install' && args.includes('--yes');
       try {
-        const result = await install(skill, { yes: args.includes('--yes') });
+        if (command === 'add' && skill.risk === 'review') throw new ReviewRequired(skill.id, skill.riskReasons);
+        const result = await install(skill, { yes });
         console.log(`${result.status}: ${result.name} (${result.risk}) from ${oneLine(skill.repo, 100)}@${skill.sha.slice(0, 7)}`);
         console.log(`Read ${result.skillMd} and follow it.`);
       } catch (error) {
@@ -105,6 +115,11 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       const out = flag(args, '--out') ?? 'catalog';
       const repos = flag(args, '--repos')?.split(',');
       const catalog = await crawl({ repos, log: (line) => console.error(line) });
+      // A crawl that ran out of API budget must not replace a good catalog: every user downloads it within a day.
+      const previous = existsSync(join(out, 'catalog.json')) ? (JSON.parse(readFileSync(join(out, 'catalog.json'), 'utf8')) as Catalog).skills.length : 0;
+      if (!repos && !args.includes('--force') && catalog.skills.length < previous * MIN_KEPT_SHARE) {
+        throw new Error(`crawl kept ${catalog.skills.length} skills, the current catalog has ${previous}; not writing (--force to override)`);
+      }
       writeCatalog(catalog, out);
       return console.log(`wrote ${catalog.skills.length} skills to ${out}/catalog.json and ${out}/index.json`);
     }

@@ -1,10 +1,12 @@
+import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { promisify } from 'node:util';
 import { join } from 'node:path';
 import { parseFrontmatter } from './frontmatter.ts';
 import { api } from './github.ts';
 import { PACKAGE_ROOT } from './paths.ts';
-import { classify } from './safety.ts';
+import { classify, isTextFile } from './safety.ts';
 import { quality } from './score.ts';
 import { readRepoFiles } from './tarball.ts';
 import type { Catalog, CatalogSkill, SkillFile } from './types.ts';
@@ -56,19 +58,44 @@ async function pool<T, R>(items: readonly T[], size: number, run: (item: T) => P
   return results;
 }
 
-async function discover(sources: Sources, log: (line: string) => void): Promise<string[]> {
-  const repos = new Set(sources.repos);
+/**
+ * Repos to crawl, with the metadata the search already returned. The Actions
+ * GITHUB_TOKEN allows 1000 REST calls an hour, so nothing is fetched twice:
+ * only seed repos the search did not return need a /repos call later.
+ */
+async function discover(sources: Sources, log: (line: string) => void): Promise<Map<string, RepoInfo | null>> {
+  const repos = new Map<string, RepoInfo | null>(sources.repos.map((repo) => [repo, null]));
   for (const topic of sources.topics) {
     for (let page = 1; page <= Math.ceil(sources.reposPerTopic / 100); page++) {
       const query = encodeURIComponent(`topic:${topic} stars:>=${sources.minStars} archived:false fork:false`);
-      const result = await api<{ items: { full_name: string }[] }>(`/search/repositories?q=${query}&sort=stars&per_page=100&page=${page}`);
-      for (const item of result.items) repos.add(item.full_name);
+      const result = await api<{ items: RepoInfo[] }>(`/search/repositories?q=${query}&sort=stars&per_page=100&page=${page}`);
+      for (const item of result.items) repos.set(item.full_name, item);
       if (result.items.length < 100) break;
     }
   }
   for (const repo of sources.exclude) repos.delete(repo);
   log(`discovered ${repos.size} repos`);
-  return [...repos];
+  return repos;
+}
+
+/** ls-remote matches refs by their tail, so `a/refs/heads/main` also answers for `main`: take the exact ref. */
+export function parseLsRemote(stdout: string, branch: string): string | null {
+  const line = stdout.split('\n').find((row) => row.split('\t')[1] === `refs/heads/${branch}`);
+  const sha = line?.split('\t')[0] ?? '';
+  return /^[0-9a-f]{40}$/.test(sha) ? sha : null;
+}
+
+/** The branch head through git, which does not count against the REST limit. */
+async function headSha(repo: string, branch: string): Promise<string> {
+  try {
+    const { stdout } = await promisify(execFile)('git', ['ls-remote', `https://github.com/${repo}.git`, `refs/heads/${branch}`], {
+      timeout: 60_000,
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+    });
+    const sha = parseLsRemote(stdout, branch);
+    if (sha) return sha;
+  } catch {}
+  return (await api<{ commit: { sha: string } }>(`/repos/${repo}/branches/${encodeURIComponent(branch)}`)).commit.sha;
 }
 
 /** Each file belongs to the deepest skill directory that contains it. */
@@ -89,11 +116,10 @@ export function groupFiles(tree: readonly TreeEntry[]): Map<string, SkillFile[]>
   return groups;
 }
 
-async function crawlRepo(fullName: string, now: number, failures: string[]): Promise<CatalogSkill[]> {
-  const repo = await api<RepoInfo>(`/repos/${fullName}`);
-  if (repo.archived) return [];
-  const branch = await api<{ commit: { sha: string } }>(`/repos/${repo.full_name}/branches/${encodeURIComponent(repo.default_branch)}`);
-  const sha = branch.commit.sha;
+async function crawlRepo(fullName: string, known: RepoInfo | null, now: number, failures: string[]): Promise<CatalogSkill[]> {
+  const repo = known ?? (await api<RepoInfo>(`/repos/${fullName}`));
+  if (repo.archived || repo.fork) return [];
+  const sha = await headSha(repo.full_name, repo.default_branch);
   const tree = await api<{ tree: TreeEntry[] }>(`/repos/${repo.full_name}/git/trees/${sha}?recursive=1`);
   const groups = [...groupFiles(tree.tree)].slice(0, MAX_SKILLS_PER_REPO);
   if (!groups.length) return [];
@@ -102,8 +128,8 @@ async function crawlRepo(fullName: string, now: number, failures: string[]): Pro
   const wanted = new Set<string>();
   for (const [dir, files] of groups) {
     if (files.length > MAX_FILES || files.some((file) => file.path.startsWith('\0'))) continue;
-    const texts = files.filter((file) => file.path === 'SKILL.md' || /\.(md|markdown|txt)$/i.test(file.path)).slice(0, MAX_SCANNED_TEXTS + 1);
-    for (const file of texts) wanted.add(dir ? `${dir}/${file.path}` : file.path);
+    const texts = files.filter((file) => file.path !== 'SKILL.md' && isTextFile(file.path)).slice(0, MAX_SCANNED_TEXTS);
+    for (const path of ['SKILL.md', ...texts.map((file) => file.path)]) wanted.add(dir ? `${dir}/${path}` : path);
   }
   const contents = await readRepoFiles(repo.full_name, sha, (path) => wanted.has(path));
 
@@ -121,7 +147,7 @@ async function crawlRepo(fullName: string, now: number, failures: string[]): Pro
     const description = [fields.description || firstLine, fields.when_to_use].filter(Boolean).join(' ');
     if (!description) return null;
 
-    const textFiles = files.filter((file) => file.path !== 'SKILL.md' && /\.(md|markdown|txt)$/i.test(file.path));
+    const textFiles = files.filter((file) => file.path !== 'SKILL.md' && isTextFile(file.path));
     const texts: Record<string, string> = {};
     for (const file of textFiles.slice(0, MAX_SCANNED_TEXTS)) {
       const bytes = contents.get(at(file.path));
@@ -171,13 +197,14 @@ export function prune(skills: readonly CatalogSkill[], now = Date.now()): Catalo
 export async function crawl(options: { repos?: string[]; log?: (line: string) => void } = {}): Promise<Catalog> {
   const log = options.log ?? (() => {});
   const sources = JSON.parse(readFileSync(join(PACKAGE_ROOT, 'catalog', 'sources.json'), 'utf8')) as Sources;
-  const repos = options.repos ?? (await discover(sources, log));
+  const discovered = options.repos ? new Map(options.repos.map((repo) => [repo, null])) : await discover(sources, log);
+  const repos = [...discovered.keys()];
   const now = Date.now();
   const failures: string[] = [];
   let done = 0;
   const found = await pool(repos, 8, async (repo) => {
     try {
-      return await crawlRepo(repo, now, failures);
+      return await crawlRepo(repo, discovered.get(repo) ?? null, now, failures);
     } catch (error) {
       log(`skip ${repo}: ${error instanceof Error ? error.message : String(error)}`);
       return [];

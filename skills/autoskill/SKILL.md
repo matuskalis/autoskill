@@ -10,9 +10,9 @@ The `autoskill` command is on PATH while this plugin is enabled.
 
 1. Run `autoskill search "<the task in a few English keywords>"`. The catalog is English, so translate the task first.
 2. Pick the hit that fits the task best. Prefer a higher quality score and `safe` over `review` when two fit equally.
-3. Run `autoskill install <id>`.
-   - `safe` installs at once: the skill only adds instructions.
-   - `review` exits with code 2 and lists why (scripts, extra permissions, shell commands). Show the user those reasons and the source link, and ask. Run `autoskill install <id> --yes` only after they agree.
+3. Install it.
+   - `safe` (the skill only adds instructions): run `autoskill add <id>`.
+   - `review` (scripts, extra permissions, code blocks or shell commands): `autoskill add` refuses it and lists why. Show the user those reasons and the source link, and ask. Run `autoskill install <id> --yes` only after they agree.
 4. Read the SKILL.md path the command prints and follow it for the current task.
 
 If nothing fits, say so; do not install a skill that only half fits.

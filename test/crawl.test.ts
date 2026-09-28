@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { groupFiles, prune } from '../src/crawl.ts';
+import { groupFiles, parseLsRemote, prune } from '../src/crawl.ts';
 import { quality } from '../src/score.ts';
 import { skill } from './fixtures.ts';
 
@@ -44,4 +44,10 @@ test('quality rewards a described, fresh, licensed, starred skill', () => {
   const bare = quality({ ...base, stars: 0, license: null, pushedAt: '2023-01-01T00:00:00Z', description: 'sql', bodyLength: 50 }, now);
   assert.equal(good, 83);
   assert.equal(bare, 3);
+});
+
+test('ls-remote: only the exact branch ref counts', () => {
+  const out = `${'7'.repeat(40)}\trefs/heads/a/refs/heads/main\n${'c'.repeat(40)}\trefs/heads/main\n`;
+  assert.equal(parseLsRemote(out, 'main'), 'c'.repeat(40));
+  assert.equal(parseLsRemote(out, 'dev'), null);
 });
