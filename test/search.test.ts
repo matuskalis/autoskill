@@ -41,6 +41,7 @@ test('the hook stays silent on unrelated, short and slash prompts', () => {
   assert.deepEqual(pick(catalog, 'what time is it in Tokyo right now', new Set()), []);
   assert.deepEqual(pick(catalog, 'pdf', new Set()), []);
   assert.deepEqual(pick(catalog, '/model opus pdf forms merge', new Set()), []);
+  assert.deepEqual(pick(catalog, '<task-notification>extract tables from PDF documents and fill PDF forms</task-notification>', new Set()), []);
 });
 
 test('the hook suggests on a clear fit and skips installed skills', () => {

@@ -17,6 +17,8 @@ const MAX_SUGGESTIONS = 3;
 const MIN_PROMPT_TERMS = 3;
 const UPDATE_AFTER_DAYS = 7;
 const DESCRIPTION_CHARS = 180;
+/** Task notifications and agent hand-backs arrive as prompts too; the user did not write them. */
+const HARNESS_TEXT = /<task-notification>|<agent-message\b|\[SYSTEM NOTIFICATION|<system-reminder>/;
 
 export interface HookInput {
   prompt?: string;
@@ -57,7 +59,7 @@ function installedNames(cwd: string | undefined): Set<string> {
 }
 
 export function pick(index: Pick<SearchIndex, 'skills' | 'postings'>, prompt: string, exclude: ReadonlySet<string>): Hit[] {
-  if (prompt.trim().startsWith('/') || tokenize(prompt).length < MIN_PROMPT_TERMS) return [];
+  if (prompt.trim().startsWith('/') || HARNESS_TEXT.test(prompt) || tokenize(prompt).length < MIN_PROMPT_TERMS) return [];
   const search = new Index(index.skills, index.postings);
   if (search.knownShare(prompt) < MIN_KNOWN_SHARE) return [];
   return search
