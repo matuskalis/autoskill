@@ -1,0 +1,19 @@
+{
+  "topics": ["claude-skills", "agent-skills", "claude-code-skills", "claude-skill", "claude-code-plugin"],
+  "minStars": 20,
+  "reposPerTopic": 200,
+  "repos": [
+    "anthropics/skills",
+    "anthropics/claude-plugins-official",
+    "obra/superpowers",
+    "K-Dense-AI/scientific-agent-skills",
+    "addyosmani/agent-skills",
+    "alirezarezvani/claude-skills",
+    "wshobson/agents",
+    "blader/humanizer",
+    "OthmanAdi/planning-with-files",
+    "JuliusBrussee/caveman",
+    "ComposioHQ/awesome-claude-skills"
+  ],
+  "exclude": []
+}

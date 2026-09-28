@@ -1,0 +1,31 @@
+name: crawl
+
+on:
+  schedule:
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Rebuild the catalog
+        run: node src/cli.ts crawl --out catalog
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Commit if it changed
+        run: |
+          git add catalog/catalog.json catalog/index.json
+          git diff --cached --quiet && exit 0
+          git config user.name "autoskill-crawler"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(catalog): weekly crawl"
+          git push

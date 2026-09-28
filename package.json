@@ -1,0 +1,25 @@
+{
+  "name": "autoskill",
+  "version": "0.1.0",
+  "description": "Finds the right Claude Code skill for each prompt in a rated, weekly-updated catalog and installs it pinned to a commit.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Matúš Kališ",
+  "repository": "github:matuskalis/autoskill",
+  "bin": {
+    "autoskill": "bin/autoskill"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "crawl": "node src/cli.ts crawl --out catalog"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}
