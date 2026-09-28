@@ -1,8 +1,8 @@
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { type Dirent, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { basename, join } from 'node:path';
 import { catalogAgeDays, loadIndex, type SearchIndex } from './catalog.ts';
-import { PACKAGE_ROOT, skillsDir, stateDir } from './paths.ts';
+import { claudeDir, PACKAGE_ROOT, skillsDir, stateDir } from './paths.ts';
 import { Index, tokenize, type Hit } from './search.ts';
 import { oneLine } from './text.ts';
 
@@ -24,10 +24,34 @@ export interface HookInput {
   cwd?: string;
 }
 
+/** Names of every skill folder (a folder holding SKILL.md) up to `depth` levels below `root`. */
+function skillFolders(root: string, depth: number, names: Set<string>) {
+  let entries: Dirent[];
+  try {
+    entries = readdirSync(root, { withFileTypes: true });
+  } catch {
+    return;
+  }
+  for (const entry of entries) {
+    if (entry.name === 'SKILL.md') names.add(basename(root));
+    if (depth > 0 && entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+      skillFolders(join(root, entry.name), depth - 1, names);
+    }
+  }
+}
+
+/** Skills the user already has: their own, the project's, synced ones, and those shipped by plugins. */
 function installedNames(cwd: string | undefined): Set<string> {
   const names = new Set<string>();
-  for (const dir of [skillsDir(), cwd ? join(cwd, '.claude', 'skills') : null]) {
-    if (dir && existsSync(dir)) for (const name of readdirSync(dir)) names.add(name);
+  skillFolders(skillsDir(), 3, names);
+  if (cwd) skillFolders(join(cwd, '.claude', 'skills'), 3, names);
+  // plugins/cache/<marketplace>/<plugin>/<version>/skills/<name>/SKILL.md; a plugin's own name counts too.
+  const cache = join(claudeDir(), 'plugins', 'cache');
+  for (const market of existsSync(cache) ? readdirSync(cache) : []) {
+    for (const plugin of existsSync(join(cache, market)) ? readdirSync(join(cache, market)) : []) {
+      names.add(plugin);
+      skillFolders(join(cache, market, plugin), 4, names);
+    }
   }
   return names;
 }
