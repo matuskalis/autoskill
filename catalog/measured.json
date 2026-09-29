@@ -713,5 +713,397 @@
   "ceiling": true,
   "discriminatingChecks": 5,
   "focusedDelta": -0.5
+ },
+ "anthropics/skills:skills/frontend-design#headroom": {
+  "id": "anthropics/skills:skills/frontend-design",
+  "mode": "text",
+  "sha": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
+  "measuredAt": "2026-09-29T16:01:24.975Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 3,
+  "withScore": 0.817,
+  "withoutScore": 0.892,
+  "delta": -0.075,
+  "firedRate": 0.333,
+  "costUsd": 8.34,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 3,
+  "focusedDelta": -0.333,
+  "headroom": {
+   "candidates": 8,
+   "kept": 3,
+   "pilotScores": [
+    0.6,
+    0.667,
+    0.667
+   ]
+  }
+ },
+ "anthropics/skills:skills/doc-coauthoring#headroom": {
+  "id": "anthropics/skills:skills/doc-coauthoring",
+  "mode": "text",
+  "sha": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
+  "measuredAt": "2026-09-29T16:07:00.304Z",
+  "model": "opus",
+  "runs": 0,
+  "cases": 0,
+  "withScore": 0.807,
+  "withoutScore": 0.807,
+  "delta": 0,
+  "firedRate": 0,
+  "costUsd": 4.991,
+  "partial": false,
+  "ceiling": true,
+  "discriminatingChecks": 0,
+  "focusedDelta": 0,
+  "headroom": {
+   "candidates": 8,
+   "kept": 1,
+   "pilotScores": [
+    0.667
+   ]
+  }
+ },
+ "anthropics/skills:skills/skill-creator#headroom": {
+  "id": "anthropics/skills:skills/skill-creator",
+  "mode": "text",
+  "sha": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
+  "measuredAt": "2026-09-29T16:12:45.587Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 4,
+  "withScore": 0.888,
+  "withoutScore": 0.725,
+  "delta": 0.162,
+  "firedRate": 0.75,
+  "costUsd": 10.003,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 6,
+  "focusedDelta": 0.5,
+  "headroom": {
+   "candidates": 8,
+   "kept": 4,
+   "pilotScores": [
+    0.6,
+    0.667,
+    0.667,
+    0.667
+   ]
+  }
+ },
+ "anthropics/skills:skills/webapp-testing#headroom": {
+  "id": "anthropics/skills:skills/webapp-testing",
+  "mode": "text",
+  "sha": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
+  "measuredAt": "2026-09-29T16:15:40.411Z",
+  "model": "opus",
+  "runs": 0,
+  "cases": 0,
+  "withScore": 0.812,
+  "withoutScore": 0.812,
+  "delta": 0,
+  "firedRate": 0,
+  "costUsd": 2.788,
+  "partial": false,
+  "ceiling": true,
+  "discriminatingChecks": 0,
+  "focusedDelta": 0,
+  "headroom": {
+   "candidates": 8,
+   "kept": 0,
+   "pilotScores": []
+  }
+ },
+ "obra/superpowers:skills/brainstorming#headroom": {
+  "id": "obra/superpowers:skills/brainstorming",
+  "mode": "text",
+  "sha": "8ca22dba9a94f28898bbce59f2537ff4d87c747d",
+  "measuredAt": "2026-09-29T16:21:36.720Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 2,
+  "withScore": 0.7,
+  "withoutScore": 0.8,
+  "delta": -0.1,
+  "firedRate": 1,
+  "costUsd": 7.662,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 5,
+  "focusedDelta": -0.2,
+  "headroom": {
+   "candidates": 8,
+   "kept": 2,
+   "pilotScores": [
+    0.5,
+    0.667
+   ]
+  }
+ },
+ "obra/superpowers:skills/writing-plans#headroom": {
+  "id": "obra/superpowers:skills/writing-plans",
+  "mode": "text",
+  "sha": "8ca22dba9a94f28898bbce59f2537ff4d87c747d",
+  "measuredAt": "2026-09-29T16:32:42.093Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 3,
+  "withScore": 0.667,
+  "withoutScore": 0.711,
+  "delta": -0.044,
+  "firedRate": 1,
+  "costUsd": 18.128,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 10,
+  "focusedDelta": -0.05,
+  "headroom": {
+   "candidates": 8,
+   "kept": 3,
+   "pilotScores": [
+    0.429,
+    0.571,
+    0.667
+   ]
+  }
+ },
+ "obra/superpowers:skills/verification-before-completion#headroom": {
+  "id": "obra/superpowers:skills/verification-before-completion",
+  "mode": "text",
+  "sha": "8ca22dba9a94f28898bbce59f2537ff4d87c747d",
+  "measuredAt": "2026-09-29T16:37:13.127Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 3,
+  "withScore": 0.892,
+  "withoutScore": 0.817,
+  "delta": 0.075,
+  "firedRate": 0,
+  "costUsd": 5.543,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 3,
+  "focusedDelta": 0.333,
+  "headroom": {
+   "candidates": 8,
+   "kept": 3,
+   "pilotScores": [
+    0.5,
+    0.6,
+    0.667
+   ]
+  }
+ },
+ "obra/superpowers:skills/receiving-code-review#headroom": {
+  "id": "obra/superpowers:skills/receiving-code-review",
+  "mode": "text",
+  "sha": "8ca22dba9a94f28898bbce59f2537ff4d87c747d",
+  "measuredAt": "2026-09-29T16:41:18.980Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 2,
+  "withScore": 1,
+  "withoutScore": 0.575,
+  "delta": 0.425,
+  "firedRate": 1,
+  "costUsd": 5.365,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 4,
+  "focusedDelta": 1,
+  "headroom": {
+   "candidates": 8,
+   "kept": 2,
+   "pilotScores": [
+    0.5,
+    0.6
+   ]
+  }
+ },
+ "obra/superpowers:skills/requesting-code-review#headroom": {
+  "id": "obra/superpowers:skills/requesting-code-review",
+  "mode": "text",
+  "sha": "8ca22dba9a94f28898bbce59f2537ff4d87c747d",
+  "measuredAt": "2026-09-29T15:57:08.840Z",
+  "model": "opus",
+  "runs": 0,
+  "cases": 0,
+  "withScore": 0.813,
+  "withoutScore": 0.813,
+  "delta": 0,
+  "firedRate": 0,
+  "costUsd": 2.091,
+  "partial": false,
+  "ceiling": true,
+  "discriminatingChecks": 0,
+  "focusedDelta": 0,
+  "headroom": {
+   "candidates": 8,
+   "kept": 0,
+   "pilotScores": []
+  }
+ },
+ "blader/humanizer:#headroom": {
+  "id": "blader/humanizer:",
+  "mode": "text",
+  "sha": "225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8",
+  "measuredAt": "2026-09-29T16:02:45.983Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 4,
+  "withScore": 0.883,
+  "withoutScore": 0.717,
+  "delta": 0.167,
+  "firedRate": 0.625,
+  "costUsd": 6.336,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 7,
+  "focusedDelta": 0.5,
+  "headroom": {
+   "candidates": 8,
+   "kept": 4,
+   "pilotScores": [
+    0.5,
+    0.571,
+    0.667,
+    0.667
+   ]
+  }
+ },
+ "JuliusBrussee/caveman:plugins/caveman/skills/caveman#headroom": {
+  "id": "JuliusBrussee/caveman:plugins/caveman/skills/caveman",
+  "mode": "text",
+  "sha": "2fd153c67988e980fb0b2455c90832159a6a5a25",
+  "measuredAt": "2026-09-29T16:08:11.105Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 4,
+  "withScore": 0.9,
+  "withoutScore": 0.925,
+  "delta": -0.025,
+  "firedRate": 0.75,
+  "costUsd": 7.9,
+  "partial": false,
+  "ceiling": true,
+  "discriminatingChecks": 4,
+  "focusedDelta": -0.125,
+  "headroom": {
+   "candidates": 8,
+   "kept": 4,
+   "pilotScores": [
+    0.667,
+    0.667,
+    0.667,
+    0.667
+   ]
+  }
+ },
+ "addyosmani/agent-skills:skills/code-review-and-quality#headroom": {
+  "id": "addyosmani/agent-skills:skills/code-review-and-quality",
+  "mode": "text",
+  "sha": "2686b620fc1fed2e8f60c704839c766b8594c6b6",
+  "measuredAt": "2026-09-29T16:14:29.962Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 2,
+  "withScore": 0.858,
+  "withoutScore": 0.775,
+  "delta": 0.083,
+  "firedRate": 0.25,
+  "costUsd": 8.525,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 3,
+  "focusedDelta": 0.333,
+  "headroom": {
+   "candidates": 8,
+   "kept": 2,
+   "pilotScores": [
+    0.571,
+    0.667
+   ]
+  }
+ },
+ "addyosmani/agent-skills:skills/api-and-interface-design#headroom": {
+  "id": "addyosmani/agent-skills:skills/api-and-interface-design",
+  "mode": "text",
+  "sha": "2686b620fc1fed2e8f60c704839c766b8594c6b6",
+  "measuredAt": "2026-09-29T16:17:47.917Z",
+  "model": "opus",
+  "runs": 0,
+  "cases": 0,
+  "withScore": 0.828,
+  "withoutScore": 0.828,
+  "delta": 0,
+  "firedRate": 0,
+  "costUsd": 3.488,
+  "partial": false,
+  "ceiling": true,
+  "discriminatingChecks": 0,
+  "focusedDelta": 0,
+  "headroom": {
+   "candidates": 8,
+   "kept": 0,
+   "pilotScores": []
+  }
+ },
+ "addyosmani/agent-skills:skills/test-driven-development#headroom": {
+  "id": "addyosmani/agent-skills:skills/test-driven-development",
+  "mode": "text",
+  "sha": "2686b620fc1fed2e8f60c704839c766b8594c6b6",
+  "measuredAt": "2026-09-29T16:26:58.684Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 4,
+  "withScore": 0.719,
+  "withoutScore": 0.706,
+  "delta": 0.012,
+  "firedRate": 0.75,
+  "costUsd": 11.759,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 7,
+  "focusedDelta": 0,
+  "headroom": {
+   "candidates": 8,
+   "kept": 4,
+   "pilotScores": [
+    0.4,
+    0.6,
+    0.667,
+    0.667
+   ]
+  }
+ },
+ "K-Dense-AI/scientific-agent-skills:skills/scientific-writing#headroom": {
+  "id": "K-Dense-AI/scientific-agent-skills:skills/scientific-writing",
+  "mode": "text",
+  "sha": "065b734670d7d990627dbc06a05b5a99be33f1f1",
+  "measuredAt": "2026-09-29T16:33:08.410Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 3,
+  "withScore": 0.867,
+  "withoutScore": 0.833,
+  "delta": 0.033,
+  "firedRate": 0.5,
+  "costUsd": 7.649,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 3,
+  "focusedDelta": 0.167,
+  "headroom": {
+   "candidates": 8,
+   "kept": 3,
+   "pilotScores": [
+    0.5,
+    0.667,
+    0.667
+   ]
+  }
  }
 }
