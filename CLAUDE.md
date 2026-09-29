@@ -11,5 +11,6 @@ Claude Code plugin: a rated catalog of public skills, a `UserPromptSubmit` hook 
 - `catalog/catalog.json` is written by the weekly Action; hand edits are overwritten. Change `catalog/sources.json` instead.
 - Nothing from a real user's transcripts or prompts goes into the repo, tests included.
 - `autoskill eval` spends real plan usage (about $6 to $8 of API-equivalent per skill at 3 cases x 2 runs with an Opus judge). Never run it from tests. Its generator sees only the skill's name and description; keep it that way, or the checks reward the skill's own conventions.
+- `autoskill eval --workspace` grants Write and Edit, never Bash, and only to safe-tier skills. Generated text never reaches a shell: seeds are written by Node and `scaffold.sh` is fixed text that copies them. Cases live in their own `--eval-dir`, so `--scaffold` never runs a script the skill ships.
 - A measurement feeds the hook only when it matches the catalog commit, the skill fired in at least half the with-arm runs, the run was not cut by the cost ceiling, and the no-skill score left headroom (`CEILING` in `src/eval.ts`). Keep all four conditions.
 - `scripts/bench-hook.ts` is the check for any change to matching: run it before and after, and do not ship a change that raises the silent fire rate above 10%.

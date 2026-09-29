@@ -27,7 +27,7 @@ The plugin adds a `UserPromptSubmit` hook, the `/autoskill` skill and the `autos
 
 ## How it decides
 
-1. **The hook runs locally on every prompt**, with no network access and no model call, in about 0.15 s. It scores the prompt against the catalog with BM25 over each skill's name and description, weighted by the skill's quality score. Most prompts produce nothing: replaying 120 real prompts, it spoke on 8% of them. It suggests at most three skills, only when at least two informative words match, most of the skill's own name is in the prompt, and the score clears a threshold. Copies of the same skill collapse into one, and the original wins over a fork. It never suggests a skill you already have, and never the same skill twice in one session.
+1. **The hook runs locally on every prompt**, with no network access and no model call, in about 0.15 s. It scores the prompt against the catalog with BM25 over each skill's name and description, weighted by the skill's quality score. Most prompts produce nothing: replaying 120 real prompts, it spoke on 5% of them. On a labelled set of 156 synthetic prompts (`scripts/bench-hook.ts`) it fires on 8% of prompts that should stay silent, with 60% top-1 precision and 62% recall. It suggests at most three skills, only when at least two informative words match, most of the skill's own name is in the prompt, and the score clears a threshold. Copies of the same skill collapse into one, and the original wins over a fork. It never suggests a skill you already have, and never the same skill twice in one session.
 2. **Claude makes the call.** It gets the candidates as context, marked as untrusted third-party text, and installs one only if it clearly fits and no installed skill covers the task: a safe one with `autoskill add`, a review one only after asking you.
 3. **Install is pinned and checked.** Files come from the exact commit in the catalog. The SKILL.md hash must match, and the downloaded files are classified again before anything is written. A folder autoskill did not create is never touched. If `~/.claude` is a git repo, installed skills are added to `skills/.gitignore`.
 4. **Claude reads the new SKILL.md and follows it** for the current task. Claude Code also picks up the new skill for the rest of the session.
@@ -78,6 +78,7 @@ autoskill list                    installed skills and how often you used them
 autoskill stats [--days N]        use counts for every skill, from your local transcripts
 autoskill prune [--days N] [--apply]
                                   remove installed skills unused for N days (default 30)
+autoskill eval <id...>            measure a skill: generated tasks with and without it, judged per check
 autoskill update                  download the latest catalog
 autoskill crawl [--repos a/b,c/d] rebuild the catalog from GitHub
 ```
