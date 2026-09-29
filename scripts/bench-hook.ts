@@ -36,7 +36,7 @@ export interface Metrics {
 
 export const MAX_SILENT_FIRE_RATE = 0.1;
 export const DEFAULT_MIN_F1 = 0.6;
-const GRID_MIN_SCORE = [6, 9, 12, 15];
+const GRID_MIN_SCORE = [6, 9, 12, 15, 17, 19, 21];
 const GRID_MIN_NAME_COVERAGE = [0.5, 0.66, 1];
 const BENCH_FILE = join(PACKAGE_ROOT, 'test', 'data', 'hook-bench.jsonl');
 

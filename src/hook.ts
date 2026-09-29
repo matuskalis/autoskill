@@ -8,7 +8,7 @@ import { oneLine } from './text.ts';
 
 /** Set with scripts/bench-hook.ts: 15 beat 9 and 12 on both halves of the labelled prompt set (29 Sep 2026). */
 export const MIN_MATCHED_TERMS = 2;
-export const MIN_SCORE = 15;
+export const MIN_SCORE = 17;
 /** Two thirds of the skill's own name must be in the prompt: the name is what the skill is about. */
 export const MIN_NAME_COVERAGE = 0.66;
 /** The catalog is English; a prompt mostly in another language matches on noise. */

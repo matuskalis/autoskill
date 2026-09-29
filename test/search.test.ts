@@ -14,7 +14,7 @@ const catalog: Catalog = {
     skill('xlsx', 'Create and edit Excel spreadsheets with formulas, charts and pivot tables.'),
     skill('frontend-design', 'Distinctive frontend interfaces: typography, color, layout for landing pages.'),
     skill('git-commit', 'Write conventional commit messages from the staged git diff.'),
-    ...Array.from({ length: 20 }, (_, i) => skill(`filler-${i}`, `Generic helper number ${i} for everyday tasks and review.`)),
+    ...Array.from({ length: 300 }, (_, i) => skill(`filler-${i}`, `Generic helper number ${i} for everyday tasks and review.`)),
   ],
 };
 

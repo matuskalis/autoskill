@@ -11,7 +11,7 @@ const catalog: Catalog = {
   skills: [
     skill('pdf', 'Extract text and tables from PDF documents, fill PDF forms, merge and split PDFs.'),
     skill('xlsx', 'Create and edit Excel spreadsheets with formulas, charts and pivot tables.'),
-    ...Array.from({ length: 20 }, (_, i) => skill(`filler-${i}`, `Generic helper number ${i} for everyday tasks and review.`)),
+    ...Array.from({ length: 300 }, (_, i) => skill(`filler-${i}`, `Generic helper number ${i} for everyday tasks and review.`)),
   ],
 };
 const index = buildIndex(catalog);
