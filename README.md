@@ -135,6 +135,7 @@ autoskill prune [--days N] [--apply]
 autoskill eval <id...>            measure a skill: generated tasks with and without it, judged per check
                                   [--runs 2] [--max-cost 15] [--hard | --grounded | --workspace]
 autoskill update                  download the latest catalog
+autoskill doctor                  check node, catalog, measurements, installed skills, permissions and hook speed
 autoskill crawl [--repos a/b,c/d] rebuild the catalog from GitHub
 ```
 

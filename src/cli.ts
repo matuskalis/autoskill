@@ -2,6 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { findSkill, loadCatalog, updateCatalog, writeCatalog } from './catalog.ts';
 import { crawl } from './crawl.ts';
+import { formatResult, runChecks } from './doctor.ts';
 import { assertWorkspaceAllowed, evaluate, type Measurement } from './eval.ts';
 import { main as hook } from './hook.ts';
 import { install, listInstalled, ReviewRequired, uninstall } from './install.ts';
@@ -28,6 +29,7 @@ const HELP = `autoskill: find, rate and install Claude Code skills
                                   measure a skill: generated tasks run with and without it, judged per check;
                                   --workspace seeds files and grants Write and Edit, safe-tier skills only
   autoskill update                download the latest catalog
+  autoskill doctor                check node, catalog, measurements, installed skills, permissions and hook speed
   autoskill crawl [--out dir] [--repos a/b,c/d] [--force]
                                   rebuild the catalog from GitHub
   autoskill hook                  the UserPromptSubmit hook (reads JSON on stdin)`;
@@ -164,6 +166,12 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
         const sign = result.delta >= 0 ? '+' : '';
         console.log(`${skill.id}: with ${result.withScore} without ${result.withoutScore} (${sign}${result.delta}) over ${result.cases} cases, focused ${result.focusedDelta >= 0 ? '+' : ''}${result.focusedDelta} on ${result.discriminatingChecks} checks, fired ${Math.round(result.firedRate * 100)}%, $${result.costUsd}${result.partial ? ', PARTIAL' : ''}${result.ceiling ? ', CEILING' : ''}`);
       }
+      return;
+    }
+    case 'doctor': {
+      const results = runChecks();
+      for (const result of results) console.log(formatResult(result));
+      if (results.some((result) => result.status === 'fail')) process.exitCode = 1;
       return;
     }
     case 'hook':
