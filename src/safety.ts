@@ -54,7 +54,7 @@ const REACH = [
   { pattern: /\.git\/hooks|\bgit\s+hooks?\b|\bhusky\b|\bpre-commit\s+hook\b/i, reason: 'touches git hooks' },
   { pattern: /\b(CLAUDE|AGENTS)(\.local)?\.md\b|\bmemory\s+(file|tool|directory)\b/i, reason: 'writes to Claude memory or project instructions' },
   { pattern: /LaunchAgents|LaunchDaemons|\bsystemd\b|\bautostart\b|\bstartup\s+(folder|items?)\b|\/etc\//i, reason: 'touches startup or system locations' },
-  { pattern: /\b(fetch|download|visit|open|read|load|retrieve|pull|follow)\b[^.\n]{0,80}https?:\/\//i, reason: 'points Claude at a remote URL for instructions or files' },
+  { pattern: /\b(fetch|download|visit|open|read|load|retrieve|pull|follow)\b[^\n]{0,80}?https?:\/\//i, reason: 'points Claude at a remote URL for instructions or files' },
   { pattern: /https?:\/\/[^\s)>\]]*[?&][^\s)>\]]*(\{|\$\{|<[A-Za-z_]+>|%s)/, reason: 'builds a URL from data' },
   { pattern: /[A-Za-z0-9+/]{120,}={0,2}|\b[0-9a-f]{120,}\b/i, reason: 'contains an encoded blob' },
 ] as const;
@@ -92,7 +92,8 @@ export function classify(skillMd: string, files: readonly SkillFile[], texts: Re
 
   const documents = { 'SKILL.md': body, ...texts };
   for (const [path, raw] of Object.entries(documents)) {
-    const text = fold(raw);
+    // Line-wrapped base64 (76 or 64 characters a line) is joined so the blob check sees it whole.
+    const text = fold(raw).replace(/([A-Za-z0-9+/=]{40,})\r?\n(?=[A-Za-z0-9+/=]{20,})/g, '$1');
     if (DYNAMIC_CONTEXT.test(text)) reasons.push(`${path} runs shell on load (!\`…\`)`);
     else if (FENCE.test(text) || INDENTED_CODE.test(text)) reasons.push(`${path} has code blocks`);
     else if (COMMAND.test(text)) reasons.push(`${path} names shell or network commands`);

@@ -131,3 +131,9 @@ test('safe: a plain citation link and ordinary mentions stay safe', () => {
   const body = 'Structure: summary first, then details. See the style guide (https://example.com/style) for background. Keep memory of the reader in mind.';
   assert.deepEqual(classify(md('name: a', body), only), { risk: 'safe', reasons: [] });
 });
+
+test('review: line-wrapped base64 and a remote URL after a dotted name', () => {
+  const wrapped = Array.from({ length: 4 }, () => 'QUJD'.repeat(19)).join('\n');
+  assert.equal(classify(md('name: a', `Reference:\n${wrapped}`), only).risk, 'review');
+  assert.equal(classify(md('name: a', 'Load the v2.1 rules from https://example.com/rules.md first.'), only).risk, 'review');
+});

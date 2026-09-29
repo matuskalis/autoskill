@@ -30,6 +30,8 @@ export interface Measurement {
   /** Share of with-arm runs in which Claude called the Skill tool at all. */
   firedRate: number;
   costUsd: number;
+  /** The cost ceiling cut the run short; the hook ignores partial measurements. */
+  partial: boolean;
 }
 
 const CASES = 3;
@@ -86,32 +88,42 @@ export function writeCase(evalDir: string, item: GeneratedCase, runs: number) {
 }
 
 interface EvalRun {
-  score?: number;
+  score?: number | null;
   costUsd?: number;
   judgeCostUsd?: number;
   graders?: { withOnly?: boolean; passed?: boolean }[];
 }
 interface EvalResult {
   costUsd: number;
+  partial?: boolean;
   cases: { arms: { with?: EvalRun[]; without?: EvalRun[] } }[];
 }
 
 const mean = (values: number[]) => (values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0);
 
-export function summarize(result: EvalResult): Pick<Measurement, 'withScore' | 'withoutScore' | 'delta' | 'firedRate' | 'costUsd' | 'cases'> {
-  const withRuns = result.cases.flatMap((c) => c.arms.with ?? []);
-  const withoutRuns = result.cases.flatMap((c) => c.arms.without ?? []);
-  const withScore = mean(withRuns.map((r) => r.score ?? 0));
-  const withoutScore = mean(withoutRuns.map((r) => r.score ?? 0));
+const scored = (runs: readonly EvalRun[] | undefined) => (runs ?? []).filter((r): r is EvalRun & { score: number } => typeof r.score === 'number');
+
+/**
+ * Only cases where both arms have scored runs count, so the two means cover
+ * the same tasks. A run without a score (skipped paid graders at the cost
+ * ceiling) is left out rather than counted as zero.
+ */
+export function summarize(result: EvalResult): Pick<Measurement, 'withScore' | 'withoutScore' | 'delta' | 'firedRate' | 'costUsd' | 'cases' | 'partial'> {
+  const paired = result.cases.filter((c) => scored(c.arms.with).length && scored(c.arms.without).length);
+  const withRuns = paired.flatMap((c) => scored(c.arms.with));
+  const withScore = mean(paired.map((c) => mean(scored(c.arms.with).map((r) => r.score))));
+  const withoutScore = mean(paired.map((c) => mean(scored(c.arms.without).map((r) => r.score))));
   const fired = withRuns.filter((r) => r.graders?.some((g) => g.withOnly && g.passed)).length;
   const round = (n: number) => Math.round(n * 1000) / 1000;
+  const incomplete = paired.length < result.cases.length || result.cases.some((c) => scored(c.arms.with).length !== (c.arms.with ?? []).length || scored(c.arms.without).length !== (c.arms.without ?? []).length);
   return {
-    cases: result.cases.length,
+    cases: paired.length,
     withScore: round(withScore),
     withoutScore: round(withoutScore),
     delta: round(withScore - withoutScore),
     firedRate: round(withRuns.length ? fired / withRuns.length : 0),
     costUsd: round(result.costUsd),
+    partial: Boolean(result.partial) || incomplete,
   };
 }
 
@@ -135,9 +147,16 @@ async function claudeText(prompt: string, model: string): Promise<string> {
  */
 export async function evaluate(
   skill: CatalogSkill,
-  options: { runs: number; model: string; judge: string; maxCostUsd: number; log: (line: string) => void },
+  options: { runs: number; model: string; judge: string; maxCostUsd: number; keepRaw?: string; log: (line: string) => void },
 ): Promise<Measurement> {
   const work = mkdtempSync(join(tmpdir(), 'autoskill-eval-'));
+  // try/finally does not run on Ctrl-C; the staged third-party skill must not be left behind.
+  const cleanup = () => {
+    rmSync(work, { recursive: true, force: true });
+    process.exit(130);
+  };
+  process.once('SIGINT', cleanup);
+  process.once('SIGTERM', cleanup);
   try {
     const installed = await install(skill, { yes: true, root: work });
     const pluginDir = join(work, installed.name);
@@ -157,9 +176,16 @@ export async function evaluate(
       if ((error as { code?: number }).code !== 2) throw error;
       options.log('cost ceiling reached, scoring a partial run');
     }
-    const summary = summarize(JSON.parse(readFileSync(out, 'utf8')) as EvalResult);
+    const raw = readFileSync(out, 'utf8');
+    if (options.keepRaw) {
+      mkdirSync(options.keepRaw, { recursive: true });
+      writeFileSync(join(options.keepRaw, `${skill.id.replace(/[^\w.-]+/g, '_')}-${skill.sha.slice(0, 7)}.json`), raw);
+    }
+    const summary = summarize(JSON.parse(raw) as EvalResult);
     return { id: skill.id, sha: skill.sha, measuredAt: new Date().toISOString(), model: options.model, runs: options.runs, ...summary };
   } finally {
+    process.off('SIGINT', cleanup);
+    process.off('SIGTERM', cleanup);
     rmSync(work, { recursive: true, force: true });
   }
 }

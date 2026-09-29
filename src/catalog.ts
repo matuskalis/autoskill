@@ -41,6 +41,9 @@ export interface MeasuredDelta {
   delta: number;
   firedRate: number;
   measuredAt: string;
+  /** The commit that was measured; a measurement says nothing about a later commit. */
+  sha: string;
+  partial?: boolean;
 }
 
 /** Measured results, shipped and downloaded; for one skill the more recent measurement wins. */
@@ -50,7 +53,7 @@ export function loadMeasured(): Record<string, MeasuredDelta> {
     try {
       const data = JSON.parse(readFileSync(path, 'utf8')) as Record<string, MeasuredDelta>;
       for (const [id, entry] of Object.entries(data)) {
-        if (typeof entry?.delta !== 'number') continue;
+        if (typeof entry?.delta !== 'number' || typeof entry.sha !== 'string' || entry.partial) continue;
         if (!merged[id] || entry.measuredAt > merged[id].measuredAt) merged[id] = entry;
       }
     } catch {}
@@ -60,8 +63,9 @@ export function loadMeasured(): Record<string, MeasuredDelta> {
 export const loadIndex = () => load<SearchIndex>('index.json');
 
 export function buildIndex(catalog: Catalog): SearchIndex {
-  const skills = catalog.skills.map(({ id, name, description, risk, quality }) => ({
+  const skills = catalog.skills.map(({ id, name, description, risk, quality, sha }) => ({
     id,
+    sha,
     name,
     description: description.slice(0, INDEX_DESCRIPTION_CHARS),
     risk,

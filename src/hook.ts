@@ -87,8 +87,8 @@ export function pick(
   return search
     .search(prompt, { limit: 10, exclude })
     .filter((hit) => hit.matched.length >= minMatchedTerms && hit.score >= minScore && hit.nameCoverage >= minNameCoverage)
-    .filter((hit) => (measured[hit.skill.id]?.delta ?? 0) > HARMFUL_DELTA)
-    .map((hit) => ({ ...hit, score: hit.score * (1 + clamp(measured[hit.skill.id]?.delta ?? 0)) }))
+    .filter((hit) => (usable(measured, hit.skill)?.delta ?? 0) > HARMFUL_DELTA)
+    .map((hit) => ({ ...hit, score: hit.score * (1 + clamp(usable(measured, hit.skill)?.delta ?? 0)) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, MAX_SUGGESTIONS);
 }
@@ -96,10 +96,18 @@ export function pick(
 /** A skill measured to make answers worse is never suggested; a measured gain lifts it by up to 30%. */
 const HARMFUL_DELTA = -0.05;
 const clamp = (delta: number) => Math.max(-0.3, Math.min(0.3, delta));
+/** Below this share of with-arm runs that loaded the skill, the delta is judge noise, not the skill. */
+const MIN_FIRED_RATE = 0.5;
+
+/** A measurement counts only for the commit it measured, and only if the skill actually loaded. */
+function usable(measured: Readonly<Record<string, MeasuredDelta>>, skill: { id: string; sha?: string }): MeasuredDelta | undefined {
+  const entry = measured[skill.id];
+  return entry && entry.sha === skill.sha && entry.firedRate >= MIN_FIRED_RATE && !entry.partial ? entry : undefined;
+}
 
 export function render(hits: readonly Hit[], measured: Readonly<Record<string, MeasuredDelta>> = {}): string {
   const lines = hits.map(({ skill }) => {
-    const delta = measured[skill.id]?.delta;
+    const delta = usable(measured, skill)?.delta;
     const evidence = delta === undefined ? '' : `, measured ${delta >= 0 ? '+' : ''}${Math.round(delta * 100)} points vs no skill`;
     return `- ${oneLine(skill.id, 120)} (${oneLine(skill.name, 64)}, ${skill.risk}, quality ${skill.quality}/100${evidence}): ${oneLine(skill.description, DESCRIPTION_CHARS)}`;
   });

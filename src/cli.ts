@@ -6,6 +6,7 @@ import { evaluate, type Measurement } from './eval.ts';
 import { main as hook } from './hook.ts';
 import { install, listInstalled, ReviewRequired, uninstall } from './install.ts';
 import { Index } from './search.ts';
+import { stateDir } from './paths.ts';
 import { oneLine } from './text.ts';
 import type { Catalog } from './types.ts';
 import { skillUsage } from './usage.ts';
@@ -138,12 +139,13 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
           model: flag(args, '--model') ?? 'opus',
           judge: flag(args, '--judge') ?? 'opus',
           maxCostUsd: Number(flag(args, '--max-cost') ?? 6),
+          keepRaw: join(stateDir(), 'evals'),
           log: (line) => console.error(`  ${line}`),
         });
         measured[skill.id] = result;
         writeFileSync(out, JSON.stringify(measured, null, 1) + '\n');
         const sign = result.delta >= 0 ? '+' : '';
-        console.log(`${skill.id}: with ${result.withScore} without ${result.withoutScore} (${sign}${result.delta}), fired ${Math.round(result.firedRate * 100)}%, $${result.costUsd}`);
+        console.log(`${skill.id}: with ${result.withScore} without ${result.withoutScore} (${sign}${result.delta}) over ${result.cases} cases, fired ${Math.round(result.firedRate * 100)}%, $${result.costUsd}${result.partial ? ', PARTIAL' : ''}`);
       }
       return;
     }

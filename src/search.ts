@@ -8,6 +8,7 @@ export interface Searchable {
   description: string;
   risk: Risk;
   quality: number;
+  sha?: string;
   terms?: string;
 }
 
