@@ -72,9 +72,11 @@ function setGitIgnored(name: string, ignored: boolean) {
   if (!ignored && has) writeFileSync(file, lines.filter((l) => l !== line).join('\n') + '\n');
 }
 
-export async function install(skill: CatalogSkill, options: { yes?: boolean } = {}): Promise<Installed> {
+/** `root` installs somewhere other than ~/.claude/skills, for evals; it skips the gitignore bookkeeping. */
+export async function install(skill: CatalogSkill, options: { yes?: boolean; root?: string } = {}): Promise<Installed> {
+  const root = options.root ?? skillsDir();
   const name = installName(skill);
-  const dest = join(skillsDir(), name);
+  const dest = join(root, name);
   const existing = existsSync(dest) ? readMarker(dest) : null;
   if (existsSync(dest) && !existing) throw new Error(`${dest} exists and was not installed by autoskill; not touching it`);
   if (existing && existing.id !== skill.id) throw new Error(`${name} is already installed from ${existing.id}`);
@@ -111,8 +113,8 @@ export async function install(skill: CatalogSkill, options: { yes?: boolean } = 
   const { risk, reasons } = classify(decoder.decode(skillMd), skill.files, texts);
   if (risk === 'review' && !options.yes) throw new ReviewRequired(skill.id, reasons);
 
-  mkdirSync(skillsDir(), { recursive: true });
-  const staging = join(skillsDir(), `.autoskill-staging-${randomUUID()}`);
+  mkdirSync(root, { recursive: true });
+  const staging = join(root, `.autoskill-staging-${randomUUID()}`);
   try {
     for (const [path, bytes] of contents) {
       const target = join(staging, path);
@@ -130,7 +132,7 @@ export async function install(skill: CatalogSkill, options: { yes?: boolean } = 
   } finally {
     rmSync(staging, { recursive: true, force: true });
   }
-  setGitIgnored(name, true);
+  if (!options.root) setGitIgnored(name, true);
   return { name, skillMd: join(dest, 'SKILL.md'), risk, reasons, status: existing ? 'updated' : 'installed' };
 }
 

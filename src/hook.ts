@@ -121,6 +121,8 @@ function refreshInBackground() {
 }
 
 export function runHook(input: HookInput): string | null {
+  // autoskill's own headless calls (eval case generation) set this so the hook stays out of them.
+  if (process.env.AUTOSKILL_DISABLE) return null;
   const prompt = input.prompt ?? '';
   const exclude = new Set([...installedNames(input.cwd), ...alreadySuggested(input.session_id)]);
   const hits = pick(loadIndex(), prompt, exclude);

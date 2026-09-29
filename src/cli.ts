@@ -1,7 +1,8 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { findSkill, loadCatalog, updateCatalog, writeCatalog } from './catalog.ts';
 import { crawl } from './crawl.ts';
+import { evaluate, type Measurement } from './eval.ts';
 import { main as hook } from './hook.ts';
 import { install, listInstalled, ReviewRequired, uninstall } from './install.ts';
 import { Index } from './search.ts';
@@ -22,6 +23,8 @@ const HELP = `autoskill: find, rate and install Claude Code skills
   autoskill stats [--days N]      how often you used every skill, from your transcripts
   autoskill prune [--days N] [--apply]
                                   remove installed skills unused for N days (default 30); dry run without --apply
+  autoskill eval <id...> [--runs N] [--max-cost USD]
+                                  measure a skill: generated tasks run with and without it, judged per check
   autoskill update                download the latest catalog
   autoskill crawl [--out dir] [--repos a/b,c/d]
                                   rebuild the catalog from GitHub
@@ -32,7 +35,7 @@ function flag(args: string[], name: string): string | undefined {
   return index === -1 ? undefined : args[index + 1];
 }
 
-const positional = (args: string[]) => args.filter((arg, i) => !arg.startsWith('--') && !args[i - 1]?.startsWith('--days') && !args[i - 1]?.startsWith('--out') && !args[i - 1]?.startsWith('--repos'));
+const positional = (args: string[]) => args.filter((arg, i) => !arg.startsWith('--') && !args[i - 1]?.startsWith('--days') && !args[i - 1]?.startsWith('--out') && !args[i - 1]?.startsWith('--repos') && !['--runs', '--model', '--judge', '--max-cost', '--limit'].includes(args[i - 1] ?? ''));
 
 async function run(command: string | undefined, args: string[]): Promise<void> {
   switch (command) {
@@ -122,6 +125,27 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       }
       writeCatalog(catalog, out);
       return console.log(`wrote ${catalog.skills.length} skills to ${out}/catalog.json and ${out}/index.json`);
+    }
+    case 'eval': {
+      const catalog = loadCatalog();
+      const out = flag(args, '--out') ?? 'catalog/measured.json';
+      const measured = existsSync(out) ? (JSON.parse(readFileSync(out, 'utf8')) as Record<string, Measurement>) : {};
+      for (const id of positional(args)) {
+        const skill = findSkill(catalog, id);
+        if (!skill) throw new Error(`${id} is not in the catalog`);
+        const result = await evaluate(skill, {
+          runs: Number(flag(args, '--runs') ?? 2),
+          model: flag(args, '--model') ?? 'opus',
+          judge: flag(args, '--judge') ?? 'opus',
+          maxCostUsd: Number(flag(args, '--max-cost') ?? 6),
+          log: (line) => console.error(`  ${line}`),
+        });
+        measured[skill.id] = result;
+        writeFileSync(out, JSON.stringify(measured, null, 1) + '\n');
+        const sign = result.delta >= 0 ? '+' : '';
+        console.log(`${skill.id}: with ${result.withScore} without ${result.withoutScore} (${sign}${result.delta}), fired ${Math.round(result.firedRate * 100)}%, $${result.costUsd}`);
+      }
+      return;
     }
     case 'hook':
       return hook();
