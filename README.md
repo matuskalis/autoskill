@@ -1,6 +1,6 @@
 # autoskill
 
-**Only 9.6% of the 22,746 public Claude Code skills on GitHub are plain instructions.** The rest can run commands, ship scripts or pre-approve tools. We scanned them all and read every red flag by hand: [the audit](docs/audit-2026-09.md).
+**Only 9.6% of the 22,746 public Claude Code skills on GitHub are plain instructions.** The rest can run commands, ship scripts or pre-approve tools. We scanned them all and read every red flag by hand: [the audit](docs/audit-2026-09.md). And we measured whether 32 of the most popular ones help Opus 5.5 at all: 2 clearly did, and for 13 the model already solved the hard tasks without them ([the leaderboard](docs/leaderboard.md)).
 
 autoskill is the catalog that came out of it, rebuilt every day. On every prompt it looks for a skill that clearly fits the task. When it finds one, Claude installs it, pinned to a commit and scanned again on your machine: instruction-only skills directly, anything that can run code only after you say yes. It also suggests changes to how you work with Claude Code, from your own local data (`autoskill advise`), and `autoskill prune` removes the skills you stopped using.
 
