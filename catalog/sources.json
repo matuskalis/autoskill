@@ -6,20 +6,30 @@
     "claude-skill",
     "claude-code-plugin"
   ],
+  "queries": [
+    "\"claude code\" skills in:name,description,readme",
+    "\"SKILL.md\" in:readme",
+    "\"agent skills\" in:name,description",
+    "\"claude skills\" in:name,description"
+  ],
+  "maxRepos": 950,
   "minStars": 20,
   "reposPerTopic": 200,
   "repos": [
-    "anthropics/skills",
-    "anthropics/claude-plugins-official",
-    "obra/superpowers",
-    "K-Dense-AI/scientific-agent-skills",
     "addyosmani/agent-skills",
+    "affaan-m/ECC",
     "alirezarezvani/claude-skills",
-    "wshobson/agents",
+    "anthropics/claude-plugins-official",
+    "anthropics/skills",
     "blader/humanizer",
-    "OthmanAdi/planning-with-files",
+    "ComposioHQ/awesome-claude-skills",
+    "garrytan/gstack",
     "JuliusBrussee/caveman",
-    "ComposioHQ/awesome-claude-skills"
+    "K-Dense-AI/scientific-agent-skills",
+    "multica-ai/andrej-karpathy-skills",
+    "obra/superpowers",
+    "OthmanAdi/planning-with-files",
+    "wshobson/agents"
   ],
   "exclude": [],
   "excludeSkills": [

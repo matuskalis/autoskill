@@ -13,6 +13,13 @@ import type { Catalog, CatalogSkill, SkillFile } from './types.ts';
 
 interface Sources {
   topics: string[];
+  /** Free-text repository searches: the most-starred skill repos often carry no topic at all. */
+  queries?: string[];
+  /**
+   * Each repo costs about one REST call, and the Actions GITHUB_TOKEN allows 1000 an hour.
+   * Seeds and topics come first; query results fill up to this many.
+   */
+  maxRepos?: number;
   minStars: number;
   reposPerTopic: number;
   repos: string[];
@@ -75,11 +82,14 @@ async function pool<T, R>(items: readonly T[], size: number, run: (item: T) => P
  */
 async function discover(sources: Sources, log: (line: string) => void): Promise<Map<string, RepoInfo | null>> {
   const repos = new Map<string, RepoInfo | null>(sources.repos.map((repo) => [repo, null]));
-  for (const topic of sources.topics) {
+  const searches = [...sources.topics.map((topic) => ({ search: `topic:${topic}`, capped: false })), ...(sources.queries ?? []).map((search) => ({ search, capped: true }))];
+  const cap = sources.maxRepos ?? Infinity;
+  for (const { search, capped } of searches) {
     for (let page = 1; page <= Math.ceil(sources.reposPerTopic / 100); page++) {
-      const query = encodeURIComponent(`topic:${topic} stars:>=${sources.minStars} archived:false fork:false`);
+      if (capped && repos.size >= cap) break;
+      const query = encodeURIComponent(`${search} stars:>=${sources.minStars} archived:false fork:false`);
       const result = await api<{ items: RepoInfo[] }>(`/search/repositories?q=${query}&sort=stars&per_page=100&page=${page}`);
-      for (const item of result.items) repos.set(item.full_name, item);
+      for (const item of result.items) if (!capped || repos.has(item.full_name) || repos.size < cap) repos.set(item.full_name, item);
       if (result.items.length < 100) break;
     }
   }
