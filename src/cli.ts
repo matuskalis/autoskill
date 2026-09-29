@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { findSkill, loadCatalog, updateCatalog, writeCatalog } from './catalog.ts';
 import { crawl } from './crawl.ts';
-import { evaluate, type Measurement } from './eval.ts';
+import { assertWorkspaceAllowed, evaluate, type Measurement } from './eval.ts';
 import { main as hook } from './hook.ts';
 import { install, listInstalled, ReviewRequired, uninstall } from './install.ts';
 import { Index } from './search.ts';
@@ -24,8 +24,9 @@ const HELP = `autoskill: find, rate and install Claude Code skills
   autoskill stats [--days N]      how often you used every skill, from your transcripts
   autoskill prune [--days N] [--apply]
                                   remove installed skills unused for N days (default 30); dry run without --apply
-  autoskill eval <id...> [--runs N] [--max-cost USD]
-                                  measure a skill: generated tasks run with and without it, judged per check
+  autoskill eval <id...> [--runs N] [--max-cost USD] [--workspace]
+                                  measure a skill: generated tasks run with and without it, judged per check;
+                                  --workspace seeds files and grants Write and Edit, safe-tier skills only
   autoskill update                download the latest catalog
   autoskill crawl [--out dir] [--repos a/b,c/d]
                                   rebuild the catalog from GitHub
@@ -131,14 +132,17 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       const catalog = loadCatalog();
       const out = flag(args, '--out') ?? 'catalog/measured.json';
       const measured = existsSync(out) ? (JSON.parse(readFileSync(out, 'utf8')) as Record<string, Measurement>) : {};
+      const workspace = args.includes('--workspace');
       for (const id of positional(args)) {
         const skill = findSkill(catalog, id);
         if (!skill) throw new Error(`${id} is not in the catalog`);
+        if (workspace) assertWorkspaceAllowed(skill);
         const result = await evaluate(skill, {
           runs: Number(flag(args, '--runs') ?? 2),
           model: flag(args, '--model') ?? 'opus',
           judge: flag(args, '--judge') ?? 'opus',
           maxCostUsd: Number(flag(args, '--max-cost') ?? 6),
+          workspace,
           keepRaw: join(stateDir(), 'evals'),
           log: (line) => console.error(`  ${line}`),
         });
