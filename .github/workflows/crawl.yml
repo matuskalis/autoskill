@@ -1,12 +1,20 @@
 name: crawl
 
+# Daily: the catalog goes to the `catalog` branch, which clients download from.
+# It is an orphan branch force-pushed with one commit, so a 36 MB file that
+# changes every day never piles up in history. Mondays also refresh the copy
+# on `main` that ships inside the plugin.
 on:
   schedule:
-    - cron: '0 4 * * 1'
+    - cron: '0 4 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: crawl
+  cancel-in-progress: false
 
 jobs:
   crawl:
@@ -17,18 +25,43 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Baseline is the last published catalog
+        run: |
+          if git fetch --depth=1 origin catalog 2>/dev/null; then
+            git show FETCH_HEAD:catalog.json > "$RUNNER_TEMP/baseline.json"
+          else
+            cp catalog/catalog.json "$RUNNER_TEMP/baseline.json"
+          fi
       - name: Rebuild the catalog
-        run: node src/cli.ts crawl --out catalog
+        # Red-flag evidence goes to the runner's temp dir and is never committed.
+        run: node src/cli.ts crawl --out "$RUNNER_TEMP/out" --baseline "$RUNNER_TEMP/baseline.json" --flags-out "$RUNNER_TEMP/flags.json"
         env:
           # A fine-grained read-only token raises the limit from 1000 to 5000 calls an hour; optional.
           GITHUB_TOKEN: ${{ secrets.CRAWL_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Check matching quality on the new catalog
-        run: node scripts/bench-hook.ts --check
-      - name: Commit if it changed
         run: |
+          cp "$RUNNER_TEMP/out/catalog.json" "$RUNNER_TEMP/out/index.json" catalog/
+          node scripts/bench-hook.ts --check
+      - name: Publish to the catalog branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          publish="$RUNNER_TEMP/publish"
+          mkdir "$publish"
+          cp "$RUNNER_TEMP/out/catalog.json" "$RUNNER_TEMP/out/index.json" catalog/measured.json "$publish/"
+          cd "$publish"
+          git init -q -b catalog
+          git config user.name "autoskill-crawler"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -qm "catalog $(date -u +%F)"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" catalog
+      - name: Mondays, refresh the copy bundled on main
+        run: |
+          [ "$(date -u +%u)" = 1 ] || [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || exit 0
           git add catalog/catalog.json catalog/index.json
           git diff --cached --quiet && exit 0
           git config user.name "autoskill-crawler"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore(catalog): weekly crawl"
+          git commit -m "chore(catalog): weekly refresh of the bundled copy"
           git push

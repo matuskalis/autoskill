@@ -16,7 +16,7 @@ export interface CheckResult {
 }
 
 const MIN_NODE = [22, 18] as const;
-const STALE_CATALOG_DAYS = 14;
+const STALE_CATALOG_DAYS = 3;
 const SLOW_HOOK_SECONDS = 0.3;
 const LATENCY_PROMPT = 'set up a postgres database migration and write integration tests for the api endpoints';
 const DAY_MS = 86_400_000;

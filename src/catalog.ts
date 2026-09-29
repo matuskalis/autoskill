@@ -75,7 +75,7 @@ export function buildIndex(catalog: Catalog): SearchIndex {
   return { version: 1, generatedAt: catalog.generatedAt, skills, postings: buildPostings(catalog.skills) };
 }
 
-/** One skill per line, so a weekly crawl commits a small diff instead of a new 20 MB blob. */
+/** One skill per line, so a crawl commits a small diff instead of a new 20 MB blob. */
 export function serialize(data: Versioned & { postings?: Postings }): string {
   const lines = data.skills.map((skill) => JSON.stringify(skill));
   const postings = data.postings ? `,\n"postings":${JSON.stringify(data.postings)}` : '';

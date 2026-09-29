@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 export const PACKAGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
 export const BUNDLED_CATALOG_DIR = join(PACKAGE_ROOT, 'catalog');
-export const CATALOG_BASE_URL = 'https://raw.githubusercontent.com/matuskalis/autoskill/main/catalog';
+/** The `catalog` branch: rebuilt and force-pushed every day by the crawl workflow. */
+export const CATALOG_BASE_URL = 'https://raw.githubusercontent.com/matuskalis/autoskill/catalog';
 
 /** Where Claude Code keeps user config; CLAUDE_CONFIG_DIR moves it. */
 export function claudeDir(): string {

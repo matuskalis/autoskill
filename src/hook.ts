@@ -15,7 +15,7 @@ export const MIN_NAME_COVERAGE = 0.66;
 export const MIN_KNOWN_SHARE = 0.7;
 const MAX_SUGGESTIONS = 3;
 const MIN_PROMPT_TERMS = 3;
-const UPDATE_AFTER_DAYS = 7;
+const UPDATE_AFTER_DAYS = 1;
 const DESCRIPTION_CHARS = 180;
 /** Task notifications and agent hand-backs arrive as prompts too; the user did not write them. */
 const HARNESS_TEXT = /<task-notification>|<agent-message\b|\[SYSTEM NOTIFICATION|<system-reminder>/;

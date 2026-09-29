@@ -91,21 +91,91 @@ export function classify(skillMd: string, files: readonly SkillFile[], texts: Re
   }
 
   if (DYNAMIC_CONTEXT.test(fold(skillMd)) && !DYNAMIC_CONTEXT.test(fold(body))) reasons.push('frontmatter contains shell on load (!`…`)');
+  // Every check is recorded, not just the first that fires: the tier is the same either way
+  // (any reason means review), and the full list is what the catalog's statistics count.
   const documents = { 'SKILL.md': body, ...texts };
   for (const [path, raw] of Object.entries(documents)) {
     // Line-wrapped base64 (76 or 64 characters a line) is joined so the blob check sees it whole.
     const text = fold(raw).replace(/([A-Za-z0-9+/=]{40,})\r?\n(?=[A-Za-z0-9+/=]{20,})/g, '$1');
     if (DYNAMIC_CONTEXT.test(text)) reasons.push(`${path} runs shell on load (!\`…\`)`);
     // License texts indent whole paragraphs; for a root license only a real fence counts as code.
-    else if (FENCE.test(text) || (!ROOT_LICENSE.test(path) && INDENTED_CODE.test(text))) reasons.push(`${path} has code blocks`);
-    else if (COMMAND.test(text)) reasons.push(`${path} names shell or network commands`);
-    else if (PERMISSIONS.test(text)) reasons.push(`${path} talks about Claude Code settings or permissions`);
-    else if (REACH.some(({ pattern }) => pattern.test(text))) reasons.push(`${path} ${REACH.find(({ pattern }) => pattern.test(text))?.reason}`);
+    if (FENCE.test(text) || (!ROOT_LICENSE.test(path) && INDENTED_CODE.test(text))) reasons.push(`${path} has code blocks`);
+    if (COMMAND.test(text)) reasons.push(`${path} names shell or network commands`);
+    if (PERMISSIONS.test(text)) reasons.push(`${path} talks about Claude Code settings or permissions`);
+    for (const { pattern, reason } of REACH) if (pattern.test(text)) reasons.push(`${path} ${reason}`);
     // Legal prose says "execute"; only a root license is spared this one check.
-    else if (!ROOT_LICENSE.test(path) && RUN_PHRASE.test(text)) reasons.push(`${path} tells the model to run something`);
+    if (!ROOT_LICENSE.test(path) && RUN_PHRASE.test(text)) reasons.push(`${path} tells the model to run something`);
   }
 
   return { risk: reasons.length ? 'review' : 'safe', reasons };
+}
+
+/**
+ * Hosts nobody installs software from on purpose: raw IPs, plain http, paste
+ * sites, tunnels and link shorteners. A vendor installer from its own domain
+ * piped to a shell is ordinary setup and counts as a capability, not a flag.
+ */
+const UNTRUSTED_HOST =
+  /^(\d{1,3}(\.\d{1,3}){3}(:\d+)?|([\w-]+\.)*(pastebin\.com|hastebin\.com|paste\.ee|ghostbin\.\w+|transfer\.sh|0x0\.st|termbin\.com|ngrok(-free)?\.(io|app|dev)|trycloudflare\.com|serveo\.net|localtunnel\.me|loca\.lt|bit\.ly|tinyurl\.com|t\.co|is\.gd|rb\.gy|cutt\.ly)|[\w.-]+\.(tk|ml|ga|cf|gq|top|xyz|zip|mov))$/i;
+
+const RED_FLAGS = [
+  {
+    rule: 'pipes a download from an untrusted host into a shell',
+    pattern: /\b(curl|wget|iwr|irm|Invoke-WebRequest)\b[^\n|]*?(https?):\/\/([^\s/'"`)]+)[^\n]*\|\s*(sudo\s+)?(ba|z)?sh\b/i,
+    suspicious: (m: RegExpMatchArray) => m[2]?.toLowerCase() === 'http' || UNTRUSTED_HOST.test(m[3] ?? ''),
+  },
+  {
+    rule: 'decodes a blob and runs it',
+    pattern: /base64\s+(-d|--decode|-D)[^\n]*\|\s*(sudo\s+)?(ba|z)?sh\b|\b(eval|exec)\s*\(\s*(atob|base64\.b64decode|Buffer\.from)\b/i,
+  },
+  {
+    rule: 'overrides or hides instructions',
+    pattern:
+      /\b(ignore|disregard|forget)\s+(all\s+|any\s+)?(previous|prior|above|earlier|system|your)\s+(instructions|rules|prompts?|guidelines)|\b(do\s+not|don't|never)\s+(tell|inform|mention|reveal|show|disclose)[^.\n]{0,40}\b(the\s+)?(user|human|operator)\b|\bwithout\s+(telling|asking|informing|notifying)\s+the\s+user\b|\bhide\s+(this|these|it|them|the\s+\w+)\s+from\s+the\s+user\b|\bsilently\s+(run|execute|send|upload|delete|install|exfiltrate)\b/i,
+  },
+  {
+    rule: 'sends the whole environment or credential files to a URL',
+    pattern:
+      /\b(curl|wget|fetch|requests\.(post|put)|axios\.post|http\.(post|request)|urlopen)\b[^\n]{0,200}(~\/\.ssh|\.aws\/credentials|\.netrc|id_rsa|id_ed25519|data\s*=\s*os\.environ\b|json\s*=\s*dict\(os\.environ\)|JSON\.stringify\(process\.env\)|\$\(env\)|\$\(printenv\))/i,
+  },
+  {
+    rule: 'reads private keys or credential files',
+    pattern: /\b(cat|read|open|less|head|type|Get-Content)\b[^\n]{0,40}(~\/\.ssh\/(id_|.*key)|\.aws\/credentials|\.netrc|\.config\/gh\/hosts\.yml|Keychains|\.docker\/config\.json)/i,
+  },
+  {
+    rule: 'fetches remote instructions and follows them',
+    pattern:
+      /\b(fetch|download|curl|wget|read|load|retrieve|get)\b[^\n]{0,80}https?:\/\/[^\n]{0,120}\b(and|then)\s+(follow|execute|run|obey|apply|do\s+what)\b/i,
+  },
+] as const;
+
+export interface RedFlag {
+  rule: string;
+  path: string;
+  line: number;
+  snippet: string;
+}
+
+/**
+ * Patterns that are not capabilities but warning signs, with the evidence a
+ * person needs to verify each by hand: file, line and the line itself. Scans
+ * every text it is given, scripts included.
+ */
+export function redFlags(files: Readonly<Record<string, string>>): RedFlag[] {
+  const flags: RedFlag[] = [];
+  for (const [path, raw] of Object.entries(files)) {
+    fold(raw)
+      .split('\n')
+      .forEach((text, index) => {
+        for (const check of RED_FLAGS) {
+          const match = text.match(check.pattern);
+          if (!match) continue;
+          if ('suspicious' in check && !check.suspicious(match)) continue;
+          flags.push({ rule: check.rule, path, line: index + 1, snippet: text.trim().slice(0, 160) });
+        }
+      });
+  }
+  return flags;
 }
 
 /** Frontmatter keys that make Claude Code run or permit something the moment a skill loads. */

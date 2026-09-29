@@ -22,4 +22,4 @@ If nothing fits, say so; do not install a skill that only half fits.
 - `autoskill list`: skills autoskill installed, with how often each was used.
 - `autoskill stats`: use counts for every skill, read from local transcripts.
 - `autoskill prune`: dry run of what has gone unused for 30 days; `--apply` removes it. Only skills autoskill installed are ever removed.
-- `autoskill update`: fetch the newest catalog now instead of waiting for the weekly refresh.
+- `autoskill update`: fetch the newest catalog now instead of waiting for the daily refresh.

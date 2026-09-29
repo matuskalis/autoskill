@@ -24,6 +24,8 @@ export interface CatalogSkill {
   hash: string;
   risk: Risk;
   riskReasons: string[];
+  /** Warning signs with evidence, from every text and script file; absent when there are none. */
+  flags?: { rule: string; path: string; line: number; snippet: string }[];
   quality: number;
 }
 

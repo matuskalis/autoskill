@@ -27,7 +27,7 @@ The plugin adds a `UserPromptSubmit` hook, the `/autoskill` skill and the `autos
 
 ## How it decides
 
-1. **The hook runs locally on every prompt** in under 0.2 s, with no model call; at most once a day it starts a background catalog download when the local copy is over a week old. It scores the prompt against the catalog with BM25 over each skill's name and description, weighted by the skill's quality score. Most prompts produce nothing: replaying 120 real prompts, it spoke on 5% of them. On a labelled set of 156 synthetic prompts (`scripts/bench-hook.ts`) it fires on 8% of prompts that should stay silent, with 67% top-1 precision and 65% recall. It suggests at most three skills, only when at least two informative words match, most of the skill's own name is in the prompt, and the score clears a threshold. Copies of the same skill collapse into one, and the original wins over a fork. It never suggests a skill you already have, and never the same skill twice in one session.
+1. **The hook runs locally on every prompt** in under 0.2 s, with no model call; at most once a day it starts a background catalog download when the local copy is over a day old. It scores the prompt against the catalog with BM25 over each skill's name and description, weighted by the skill's quality score. Most prompts produce nothing: replaying 120 real prompts, it spoke on 5% of them. On a labelled set of 156 synthetic prompts (`scripts/bench-hook.ts`) it fires on 8% of prompts that should stay silent, with 67% top-1 precision and 65% recall. It suggests at most three skills, only when at least two informative words match, most of the skill's own name is in the prompt, and the score clears a threshold. Copies of the same skill collapse into one, and the original wins over a fork. It never suggests a skill you already have, and never the same skill twice in one session.
 2. **Claude makes the call.** It gets the candidates as context, marked as untrusted third-party text, and installs one only if it clearly fits and no installed skill covers the task: a safe one with `autoskill add`, a review one only after asking you.
 3. **Install is pinned and checked.** Files come from the exact commit in the catalog. The SKILL.md hash must match, and the downloaded files are classified again before anything is written. A folder autoskill did not create is never touched. If `~/.claude` is a git repo, installed skills are added to `skills/.gitignore`.
 4. **Claude reads the new SKILL.md and follows it** for the current task. Claude Code also picks up the new skill for the rest of the session.
@@ -43,7 +43,7 @@ The check fails closed, so most skills land in `review`: about one skill in ten 
 
 ## The catalog
 
-`catalog/catalog.json` is set to be rebuilt every Monday by a GitHub Action (`.github/workflows/crawl.yml`), along with `catalog/index.json`, a slim prebuilt search index the hook loads. The crawl collects repos under the topics in `catalog/sources.json` plus a list of known repos, finds every `SKILL.md` in the git tree, reads the skill's text files from one tarball per repo, and drops:
+The catalog is rebuilt every day by a GitHub Action (`.github/workflows/crawl.yml`) and published to the `catalog` branch, which clients download from: `catalog.json`, plus `index.json`, a slim prebuilt search index the hook loads. The branch holds one force-pushed commit, so daily updates never bloat the history; the copy on `main` that ships inside the plugin is refreshed on Mondays. A crawl that finds under 85% of the last published skill count is refused rather than published. The crawl collects repos under the topics in `catalog/sources.json` plus a list of known repos, finds every `SKILL.md` in the git tree, reads the skill's text files from one tarball per repo, and drops:
 
 - archived repos,
 - skills with no description,
@@ -51,7 +51,7 @@ The check fails closed, so most skills land in `review`: about one skill in ten 
 - skills scoring under 25,
 - byte-identical copies (the most-starred copy is kept).
 
-A skill that disappears upstream disappears from the catalog on the next crawl. Your local copy refreshes itself in the background when it is older than a week, or right away with `autoskill update`.
+A skill that disappears upstream disappears from the catalog on the next crawl. Your local copy refreshes itself in the background once a day (about 9 MB gzipped), or right away with `autoskill update`.
 
 ### Quality score (0 to 100)
 

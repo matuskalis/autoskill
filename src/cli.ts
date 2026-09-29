@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { findSkill, loadCatalog, updateCatalog, writeCatalog } from './catalog.ts';
 import { crawl } from './crawl.ts';
 import { formatResult, runChecks } from './doctor.ts';
@@ -121,14 +121,19 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
     case 'crawl': {
       const out = flag(args, '--out') ?? 'catalog';
       const repos = flag(args, '--repos')?.split(',');
-      const catalog = await crawl({ repos, log: (line) => console.error(line) });
+      // The last published catalog; a daily run writes into a fresh directory, so `out` alone is no baseline.
+      const baseline = flag(args, '--baseline') ?? join(out, 'catalog.json');
+      const flagsOut = flag(args, '--flags-out') ?? join(stateDir(), 'flags.json');
+      const { catalog, flags } = await crawl({ repos, log: (line) => console.error(line) });
       // A crawl that ran out of API budget must not replace a good catalog: every user downloads it within a day.
-      const previous = existsSync(join(out, 'catalog.json')) ? (JSON.parse(readFileSync(join(out, 'catalog.json'), 'utf8')) as Catalog).skills.length : 0;
-      if (!repos && !args.includes('--force') && catalog.skills.length < previous * MIN_KEPT_SHARE) {
-        throw new Error(`crawl kept ${catalog.skills.length} skills, the current catalog has ${previous}; not writing (--force to override)`);
+      const previous = existsSync(baseline) ? (JSON.parse(readFileSync(baseline, 'utf8')) as Catalog).skills.length : 0;
+      if (!args.includes('--force') && catalog.skills.length < previous * MIN_KEPT_SHARE) {
+        throw new Error(`crawl kept ${catalog.skills.length} skills, the baseline has ${previous}; not writing (--force to override)`);
       }
       writeCatalog(catalog, out);
-      return console.log(`wrote ${catalog.skills.length} skills to ${out}/catalog.json and ${out}/index.json`);
+      mkdirSync(dirname(flagsOut), { recursive: true });
+      writeFileSync(flagsOut, JSON.stringify(flags, null, 1) + '\n');
+      return console.log(`wrote ${catalog.skills.length} skills to ${out}/catalog.json and ${out}/index.json; ${Object.keys(flags).length} held skills' evidence to ${flagsOut}`);
     }
     case 'eval': {
       const catalog = loadCatalog();

@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { parseFrontmatter } from './frontmatter.ts';
 import { api } from './github.ts';
 import { PACKAGE_ROOT } from './paths.ts';
-import { classify, isTextFile } from './safety.ts';
+import { classify, isTextFile, redFlags } from './safety.ts';
 import { quality } from './score.ts';
 import { readRepoFiles } from './tarball.ts';
 import type { Catalog, CatalogSkill, SkillFile } from './types.ts';
@@ -17,6 +17,8 @@ interface Sources {
   reposPerTopic: number;
   repos: string[];
   exclude: string[];
+  /** Skill ids dropped after a red flag was confirmed by hand. */
+  excludeSkills?: string[];
 }
 
 interface RepoInfo {
@@ -39,6 +41,10 @@ interface TreeEntry {
 const MAX_SKILLS_PER_REPO = 400;
 const MAX_FILES = 60;
 const MAX_SCANNED_TEXTS = 12;
+export const HELD_REASON = 'held for manual review';
+/** Scripts are read only for the red-flag scan; their tier is already review. */
+const MAX_SCANNED_SCRIPT_BYTES = 200_000;
+const SCRIPT = /\.(sh|bash|zsh|py|js|mjs|cjs|ts|rb|pl|ps1|php|json|ya?ml|toml)$/i;
 const MIN_QUALITY = 25;
 const STALE_DAYS = 730;
 const STALE_MIN_STARS = 50;
@@ -129,7 +135,10 @@ async function crawlRepo(fullName: string, known: RepoInfo | null, now: number, 
   for (const [dir, files] of groups) {
     if (files.length > MAX_FILES || files.some((file) => file.path.startsWith('\0'))) continue;
     const texts = files.filter((file) => file.path !== 'SKILL.md' && isTextFile(file.path)).slice(0, MAX_SCANNED_TEXTS);
-    for (const path of ['SKILL.md', ...texts.map((file) => file.path)]) wanted.add(dir ? `${dir}/${path}` : path);
+    const scripts = files.filter((file) => SCRIPT.test(file.path) && file.size <= MAX_SCANNED_SCRIPT_BYTES);
+    for (const path of ['SKILL.md', ...texts.map((file) => file.path), ...scripts.map((file) => file.path)]) {
+      wanted.add(dir ? `${dir}/${path}` : path);
+    }
   }
   const contents = await readRepoFiles(repo.full_name, sha, (path) => wanted.has(path));
 
@@ -160,6 +169,18 @@ async function crawlRepo(fullName: string, known: RepoInfo | null, now: number, 
       classification.reasons.push(`${missing} text file${missing === 1 ? '' : 's'} not scanned`);
     }
 
+    const scanned: Record<string, string> = { 'SKILL.md': skillMd, ...texts };
+    for (const file of files) {
+      const bytes = SCRIPT.test(file.path) ? contents.get(at(file.path)) : undefined;
+      if (bytes) scanned[file.path] = bytes.toString('utf8');
+    }
+    const flags = redFlags(scanned);
+    // The evidence stays private until a person has checked it: the public catalog only says the skill is held.
+    if (flags.length) {
+      classification.risk = 'review';
+      classification.reasons.push(HELD_REASON);
+    }
+
     const license = fields.license || repo.license?.spdx_id || null;
     const entry: CatalogSkill = {
       id: `${repo.full_name}:${dir}`,
@@ -175,6 +196,7 @@ async function crawlRepo(fullName: string, known: RepoInfo | null, now: number, 
       hash: createHash('sha256').update(skillBytes).digest('hex'),
       risk: classification.risk,
       riskReasons: classification.reasons,
+      ...(flags.length ? { flags } : {}),
       quality: 0,
     };
     entry.quality = quality({ ...entry, bodyLength: body.length }, now);
@@ -195,7 +217,13 @@ export function prune(skills: readonly CatalogSkill[], now = Date.now()): Catalo
   return [...byHash.values()].sort((a, b) => b.quality - a.quality || a.id.localeCompare(b.id));
 }
 
-export async function crawl(options: { repos?: string[]; log?: (line: string) => void } = {}): Promise<Catalog> {
+export interface CrawlResult {
+  catalog: Catalog;
+  /** Red-flag evidence by skill id. Never published: it names repos before anyone has verified a finding. */
+  flags: Record<string, NonNullable<CatalogSkill['flags']>>;
+}
+
+export async function crawl(options: { repos?: string[]; log?: (line: string) => void } = {}): Promise<CrawlResult> {
   const log = options.log ?? (() => {});
   const sources = JSON.parse(readFileSync(join(PACKAGE_ROOT, 'catalog', 'sources.json'), 'utf8')) as Sources;
   const discovered = options.repos ? new Map(options.repos.map((repo) => [repo, null])) : await discover(sources, log);
@@ -213,8 +241,14 @@ export async function crawl(options: { repos?: string[]; log?: (line: string) =>
       if (++done % 50 === 0) log(`${done}/${repos.length} repos`);
     }
   });
-  const skills = prune(found.flat(), now);
-  log(`${found.flat().length} skills found, ${skills.length} kept, ${failures.length} SKILL.md reads failed`);
+  const excluded = new Set(sources.excludeSkills ?? []);
+  const kept = prune(found.flat().filter((skill) => !excluded.has(skill.id)), now);
+  const flags: CrawlResult['flags'] = {};
+  const skills = kept.map(({ flags: evidence, ...skill }) => {
+    if (evidence?.length) flags[skill.id] = evidence;
+    return skill;
+  });
+  log(`${found.flat().length} skills found, ${skills.length} kept, ${Object.keys(flags).length} held for review, ${failures.length} SKILL.md reads failed`);
   for (const failure of failures.slice(0, 10)) log(`  failed: ${failure}`);
-  return { version: 1, generatedAt: new Date(now).toISOString(), skills };
+  return { catalog: { version: 1, generatedAt: new Date(now).toISOString(), skills }, flags };
 }
