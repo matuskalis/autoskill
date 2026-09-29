@@ -86,4 +86,5 @@ test('a measurement is ignored for another commit, a skill that never loaded, or
   assert.equal(names(harmful({ sha: 'b'.repeat(40) })).includes('pdf'), true);
   assert.equal(names(harmful({ firedRate: 0.2 })).includes('pdf'), true);
   assert.equal(names(harmful({ partial: true })).includes('pdf'), true);
+  assert.equal(names(harmful({ ceiling: true })).includes('pdf'), true);
 });

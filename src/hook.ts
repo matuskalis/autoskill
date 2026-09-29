@@ -99,10 +99,10 @@ const clamp = (delta: number) => Math.max(-0.3, Math.min(0.3, delta));
 /** Below this share of with-arm runs that loaded the skill, the delta is judge noise, not the skill. */
 const MIN_FIRED_RATE = 0.5;
 
-/** A measurement counts only for the commit it measured, and only if the skill actually loaded. */
+/** A measurement counts only for the commit it measured, when the skill loaded, the run finished, and the task left headroom. */
 function usable(measured: Readonly<Record<string, MeasuredDelta>>, skill: { id: string; sha?: string }): MeasuredDelta | undefined {
   const entry = measured[skill.id];
-  return entry && entry.sha === skill.sha && entry.firedRate >= MIN_FIRED_RATE && !entry.partial ? entry : undefined;
+  return entry && entry.sha === skill.sha && entry.firedRate >= MIN_FIRED_RATE && !entry.partial && !entry.ceiling ? entry : undefined;
 }
 
 export function render(hits: readonly Hit[], measured: Readonly<Record<string, MeasuredDelta>> = {}): string {

@@ -44,7 +44,7 @@ test('summarize averages arms and counts fired runs', () => {
       { arms: { with: [{ score: 1, graders: [fired] }], without: [{ score: 0 }] } },
     ],
   });
-  assert.deepEqual(result, { cases: 2, withScore: 0.875, withoutScore: 0.25, delta: 0.625, firedRate: 0.667, costUsd: 1.235, partial: false });
+  assert.deepEqual(result, { cases: 2, withScore: 0.875, withoutScore: 0.25, delta: 0.625, firedRate: 0.667, costUsd: 1.235, partial: false, ceiling: false });
 });
 
 test('summarize pairs cases and never counts an unscored run as zero', () => {

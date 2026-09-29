@@ -145,7 +145,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
         measured[skill.id] = result;
         writeFileSync(out, JSON.stringify(measured, null, 1) + '\n');
         const sign = result.delta >= 0 ? '+' : '';
-        console.log(`${skill.id}: with ${result.withScore} without ${result.withoutScore} (${sign}${result.delta}) over ${result.cases} cases, fired ${Math.round(result.firedRate * 100)}%, $${result.costUsd}${result.partial ? ', PARTIAL' : ''}`);
+        console.log(`${skill.id}: with ${result.withScore} without ${result.withoutScore} (${sign}${result.delta}) over ${result.cases} cases, fired ${Math.round(result.firedRate * 100)}%, $${result.costUsd}${result.partial ? ', PARTIAL' : ''}${result.ceiling ? ', CEILING' : ''}`);
       }
       return;
     }

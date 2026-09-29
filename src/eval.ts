@@ -32,7 +32,12 @@ export interface Measurement {
   costUsd: number;
   /** The cost ceiling cut the run short; the hook ignores partial measurements. */
   partial: boolean;
+  /** The model already passed nearly every check without the skill, so the delta says nothing. */
+  ceiling: boolean;
 }
+
+/** Above this no-skill score there is too little headroom for a delta to mean anything. */
+export const CEILING = 0.9;
 
 const CASES = 3;
 const CHECKS_MIN = 3;
@@ -108,7 +113,7 @@ const scored = (runs: readonly EvalRun[] | undefined) => (runs ?? []).filter((r)
  * the same tasks. A run without a score (skipped paid graders at the cost
  * ceiling) is left out rather than counted as zero.
  */
-export function summarize(result: EvalResult): Pick<Measurement, 'withScore' | 'withoutScore' | 'delta' | 'firedRate' | 'costUsd' | 'cases' | 'partial'> {
+export function summarize(result: EvalResult): Pick<Measurement, 'withScore' | 'withoutScore' | 'delta' | 'firedRate' | 'costUsd' | 'cases' | 'partial' | 'ceiling'> {
   const paired = result.cases.filter((c) => scored(c.arms.with).length && scored(c.arms.without).length);
   const withRuns = paired.flatMap((c) => scored(c.arms.with));
   const withScore = mean(paired.map((c) => mean(scored(c.arms.with).map((r) => r.score))));
@@ -124,6 +129,7 @@ export function summarize(result: EvalResult): Pick<Measurement, 'withScore' | '
     firedRate: round(withRuns.length ? fired / withRuns.length : 0),
     costUsd: round(result.costUsd),
     partial: Boolean(result.partial) || incomplete,
+    ceiling: withoutScore >= CEILING,
   };
 }
 

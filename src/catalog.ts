@@ -44,6 +44,7 @@ export interface MeasuredDelta {
   /** The commit that was measured; a measurement says nothing about a later commit. */
   sha: string;
   partial?: boolean;
+  ceiling?: boolean;
 }
 
 /** Measured results, shipped and downloaded; for one skill the more recent measurement wins. */
