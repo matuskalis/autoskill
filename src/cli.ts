@@ -148,6 +148,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
             workspace,
             keepRaw: join(stateDir(), 'evals'),
             hard: args.includes('--hard'),
+            grounded: args.includes('--grounded'),
             log: (line) => console.error(`  ${line}`),
           });
         } catch (error) {
@@ -157,7 +158,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
           continue;
         }
         // Workspace results live beside text results; the hook reads only the text key for now.
-        const suffix = result.mode === 'workspace' ? '#workspace' : args.includes('--hard') ? '#hard' : '';
+        const suffix = result.mode === 'workspace' ? '#workspace' : args.includes('--grounded') ? '#grounded' : args.includes('--hard') ? '#hard' : '';
         measured[`${skill.id}${suffix}`] = result;
         writeFileSync(out, JSON.stringify(measured, null, 1) + '\n');
         const sign = result.delta >= 0 ? '+' : '';
