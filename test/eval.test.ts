@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { evaluate, generationPrompt, isWorkspacePath, parseCases, parseWorkspaceCases, summarize, workspaceGenerationPrompt, writeCase, writeWorkspaceCase, WorkspaceRefused } from '../src/eval.ts';
+import { evaluate, generationPrompt, isWorkspacePath, parseCases, parseWorkspaceCases, stripToInstructions, summarize, workspaceGenerationPrompt, writeCase, writeWorkspaceCase, WorkspaceRefused } from '../src/eval.ts';
 import type { CatalogSkill } from '../src/types.ts';
 
 test('the generator sees the description, never the body, flattened', () => {
@@ -155,4 +155,16 @@ test('--workspace refuses a review-tier skill before any download or model call'
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+test('stripToInstructions keeps SKILL.md and text references, drops plugin parts and code', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'autoskill-strip-'));
+  const put = (path: string, text = 'x') => {
+    mkdirSync(join(dir, path, '..'), { recursive: true });
+    writeFileSync(join(dir, path), text);
+  };
+  for (const path of ['SKILL.md', 'reference/guide.md', 'LICENSE.txt', 'scripts/run.py', 'hooks/hooks.json', 'agents/helper.md', 'commands/go.md', '.mcp.json', '.claude-plugin/plugin.json', 'CLAUDE.md', 'notes.txt']) put(path);
+  stripToInstructions(dir);
+  const left = (readdirSync(dir, { recursive: true, encoding: 'utf8' }) as string[]).filter((p) => !existsSync(join(dir, p)) || !statSync(join(dir, p)).isDirectory()).sort();
+  assert.deepEqual(left, ['LICENSE.txt', 'SKILL.md', 'notes.txt', 'reference/guide.md']);
 });

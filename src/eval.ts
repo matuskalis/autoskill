@@ -1,10 +1,10 @@
 import { execFile } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
 import { install, isSafeRelativePath } from './install.ts';
-import { loadTimeRisks } from './safety.ts';
+import { isTextFile, loadTimeRisks } from './safety.ts';
 import { oneLine } from './text.ts';
 import type { CatalogSkill } from './types.ts';
 
@@ -77,6 +77,26 @@ const RESERVED_TOP = new Set(['.mcp.json', 'claude.md', 'claude.local.md']);
  * body would reward the skill's own conventions and inflate its uplift.
  */
 /** `hard` asks for tasks near the edge of what a frontier model gets right, to escape the ceiling. */
+/**
+ * The staged folder is loaded by `claude plugin eval` as a plugin, so any
+ * hooks/, agents/, commands/, .mcp.json or manifest a skill ships would load
+ * and could run. Keep only SKILL.md and text references at their paths; with
+ * read-only tools the eval could not run shipped code anyway.
+ */
+export function stripToInstructions(dir: string, root = dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    const topLevel = dir === root;
+    const pluginPart = topLevel && (PLUGIN_PARTS.has(entry.name) || entry.name.startsWith('.'));
+    if (entry.isDirectory() && !pluginPart) stripToInstructions(path, root);
+    else if (pluginPart || entry.isSymbolicLink() || !(entry.isFile() && (entry.name === 'SKILL.md' || isTextFile(entry.name)))) {
+      rmSync(path, { recursive: true, force: true });
+    }
+  }
+}
+
+const PLUGIN_PARTS = new Set(['hooks', 'agents', 'commands', 'output-styles', 'skills', 'bin', 'monitors', 'settings.json', 'CLAUDE.md']);
+
 export function generationPrompt(skill: Pick<CatalogSkill, 'name' | 'description'>, hard = false): string {
   return [
     'You design evaluation tasks for a coding assistant. Below is the name and description of an optional add-on the assistant may or may not have.',
@@ -297,6 +317,7 @@ export async function evaluate(
   try {
     const installed = await install(skill, { yes: true, root: work });
     const pluginDir = join(work, installed.name);
+    stripToInstructions(pluginDir);
     const risks = loadTimeRisks(readFileSync(join(pluginDir, 'SKILL.md'), 'utf8'));
     if (risks.length) throw new Error(`${skill.id} is not evaluated: loading it would act on this machine (${risks.join('; ')})`);
     options.log(`staged ${skill.id} @ ${skill.sha.slice(0, 7)}`);
