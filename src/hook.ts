@@ -154,7 +154,7 @@ function refreshInBackground() {
   } catch {}
   mkdirSync(stateDir(), { recursive: true });
   writeFileSync(stamp, new Date().toISOString());
-  const child = spawn(process.execPath, [join(PACKAGE_ROOT, 'src', 'cli.ts'), 'update', '--quiet'], { detached: true, stdio: 'ignore' });
+  const child = spawn(process.execPath, [join(PACKAGE_ROOT, 'src', 'cli.ts'), 'background'], { detached: true, stdio: 'ignore' });
   child.unref();
 }
 

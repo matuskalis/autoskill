@@ -22,7 +22,7 @@ function record(usage: Map<string, Usage>, name: string, at: string) {
   usage.set(name, entry);
 }
 
-function transcripts(since: number): string[] {
+export function transcripts(since: number): string[] {
   const root = join(claudeDir(), 'projects');
   if (!existsSync(root)) return [];
   return readdirSync(root, { recursive: true, encoding: 'utf8' })

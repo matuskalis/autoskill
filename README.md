@@ -124,6 +124,19 @@ The hook uses a measurement only when it is for the exact commit in the catalog,
 
 "text" tasks are answered in one reply; "hard" tasks were generated to sit at the edge of the model's ability; "workspace" tasks edit seeded files. Each row is 3 tasks x 2 runs per arm (the workspace row 1 run); deltas under about 0.1 are within judge noise. Raw results: `catalog/measured.json`.
 
+## Workflow advice
+
+`autoskill advise` reads your own Claude Code files and suggests changes to how you work. It only reads: nothing in `~/.claude` is changed unless you ask Claude to apply a fix. Each check fires only on something measured in your files, and each piece of advice comes from Anthropic's documentation or a published measurement:
+
+| check | fires when | suggests |
+|---|---|---|
+| max effort | 20% or more of your turns in the last 14 days (and at least 50) ran at `max` | a lower default per model, `max` only where it measurably helps |
+| effort not pinned | a 5.5 model you use has no `modelSettings` entry | check with `/effort`, then pin the level for that model |
+| long CLAUDE.md | a CLAUDE.md you work with is over 200 lines | trim to lines that prevent mistakes; move procedures to skills |
+| idle skills | a skill in `~/.claude/skills` was not used or edited for 60 days | remove it: every skill's description costs context in each session |
+
+The daily background job recomputes the advice alongside the catalog refresh. At session startup the plugin shows at most one new tip a day, read from that precomputed file, so startup stays at about 0.1 s. Tips are fixed templates with counts and paths, never text from your transcripts. `AUTOSKILL_ADVICE=off` turns them off.
+
 ## Commands
 
 ```
@@ -133,6 +146,7 @@ autoskill add <id>                install a safe-tier skill pinned to a commit
 autoskill install <id> [--yes]    same; --yes for a review-tier skill after you agreed
 autoskill uninstall <name>        remove a skill autoskill installed
 autoskill list                    installed skills and how often you used them
+autoskill advise [--json]         suggestions for your setup, from your own files
 autoskill stats [--days N]        use counts for every skill, from your local transcripts
 autoskill prune [--days N] [--apply]
                                   remove installed skills unused for N days (default 30)

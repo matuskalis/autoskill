@@ -23,3 +23,4 @@ If nothing fits, say so; do not install a skill that only half fits.
 - `autoskill stats`: use counts for every skill, read from local transcripts.
 - `autoskill prune`: dry run of what has gone unused for 30 days; `--apply` removes it. Only skills autoskill installed are ever removed.
 - `autoskill update`: fetch the newest catalog now instead of waiting for the daily refresh.
+- `autoskill advise`: suggestions for the user's own Claude Code setup (effort per model, long CLAUDE.md files, idle skills), each with evidence and the exact fix. Apply a fix only when the user asks for it.

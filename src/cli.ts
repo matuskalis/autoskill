@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { findSkill, loadCatalog, updateCatalog, writeCatalog } from './catalog.ts';
+import { formatAdvice, refreshAdvice, startupTip } from './advise.ts';
 import { crawl } from './crawl.ts';
 import { formatResult, runChecks } from './doctor.ts';
 import { assertWorkspaceAllowed, evaluate, type Measurement } from './eval.ts';
@@ -28,6 +29,7 @@ const HELP = `autoskill: find, rate and install Claude Code skills
   autoskill eval <id...> [--runs N] [--max-cost USD] [--workspace]
                                   measure a skill: generated tasks run with and without it, judged per check;
                                   --workspace seeds files and grants Write and Edit, safe-tier skills only
+  autoskill advise [--json]       suggestions for your Claude Code setup, from your own files
   autoskill update                download the latest catalog
   autoskill doctor                check node, catalog, measurements, installed skills, permissions and hook speed
   autoskill crawl [--out dir] [--repos a/b,c/d] [--force]
@@ -111,6 +113,26 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
         if (args.includes('--apply')) uninstall(name);
         console.log(`${args.includes('--apply') ? 'removed' : 'would remove'} ${name}`);
       }
+      return;
+    }
+    case 'advise': {
+      const advice = await refreshAdvice();
+      return console.log(args.includes('--json') ? JSON.stringify(advice, null, 2) : formatAdvice(advice));
+    }
+    case 'session-start': {
+      // SessionStart hook: reads only the precomputed advice file; any error stays silent.
+      try {
+        let input = '';
+        for await (const chunk of process.stdin) input += chunk;
+        const tip = startupTip((JSON.parse(input) as { source?: string }).source);
+        if (tip) process.stdout.write(tip);
+      } catch {}
+      return;
+    }
+    case 'background': {
+      // The daily job the prompt hook starts: refresh the catalog, then recompute advice.
+      await updateCatalog().catch(() => null);
+      await refreshAdvice().catch(() => null);
       return;
     }
     case 'update': {
