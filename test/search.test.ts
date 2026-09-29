@@ -22,6 +22,21 @@ test('tokenize drops stopwords and folds plurals and accents', () => {
   assert.deepEqual(tokenize('Please merge the PDFs, café forms'), ['merge', 'pdf', 'cafe', 'form']);
 });
 
+test('a name published by more repos outranks an equal match from one repo', () => {
+  const forks = ['a', 'b', 'c'].map((owner) => skill('pdf-merge', 'Merge and split PDF documents.', { id: `${owner}/skills:pdf-merge`, repo: `${owner}/skills` }));
+  const index = new Index([skill('merge-pdf', 'Merge and split PDF documents.'), ...forks, ...catalog.skills.slice(4)]);
+  const [first, second] = index.search('merge pdf documents');
+  assert.equal(first?.skill.name, 'pdf-merge');
+  assert.ok(first && second && first.score > second.score);
+});
+
+test('a one-word name that many skills use ranks below a specific name', () => {
+  const common = Array.from({ length: 25 }, (_, i) => skill(`other-${i}`, 'Review helper.'));
+  const unrelated = Array.from({ length: 700 }, (_, i) => skill(`unrelated-${i}`, `Topic number${i}.`));
+  const index = new Index([skill('review', 'Review pull request diffs for bugs.'), skill('diff-checker', 'Check pull request diffs for bugs.'), ...common, ...unrelated]);
+  assert.equal(index.search('review the pull request diffs for bugs')[0]?.skill.name, 'diff-checker');
+});
+
 test('the right skill ranks first', () => {
   const index = new Index(catalog.skills);
   assert.equal(index.search('fill out this PDF form and merge two PDFs')[0]?.skill.name, 'pdf');
