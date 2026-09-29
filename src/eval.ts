@@ -116,7 +116,9 @@ export function summarize(result: EvalResult): Pick<Measurement, 'withScore' | '
 }
 
 async function claudeText(prompt: string, model: string): Promise<string> {
-  const { stdout } = await run('claude', ['-p', prompt, '--model', model, '--output-format', 'json'], {
+  // No hooks and no MCP servers: a user's SessionStart hooks alone can add minutes to a one-shot call.
+  const flags = ['--model', model, '--effort', 'medium', '--settings', '{"disableAllHooks":true}', '--strict-mcp-config', '--output-format', 'json'];
+  const { stdout } = await run('claude', ['-p', prompt, ...flags], {
     maxBuffer: 20_000_000,
     timeout: 300_000,
     env: { ...process.env, AUTOSKILL_DISABLE: '1' },

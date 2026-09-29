@@ -35,6 +35,28 @@ function load<T extends Versioned>(file: CatalogFile): T {
 }
 
 export const loadCatalog = () => load<Catalog>('catalog.json');
+
+/** What the hook needs from `autoskill eval` results: the measured uplift per skill id. */
+export interface MeasuredDelta {
+  delta: number;
+  firedRate: number;
+  measuredAt: string;
+}
+
+/** Measured results, shipped and downloaded; for one skill the more recent measurement wins. */
+export function loadMeasured(): Record<string, MeasuredDelta> {
+  const merged: Record<string, MeasuredDelta> = {};
+  for (const path of [join(BUNDLED_CATALOG_DIR, 'measured.json'), join(stateDir(), 'measured.json')]) {
+    try {
+      const data = JSON.parse(readFileSync(path, 'utf8')) as Record<string, MeasuredDelta>;
+      for (const [id, entry] of Object.entries(data)) {
+        if (typeof entry?.delta !== 'number') continue;
+        if (!merged[id] || entry.measuredAt > merged[id].measuredAt) merged[id] = entry;
+      }
+    } catch {}
+  }
+  return merged;
+}
 export const loadIndex = () => load<SearchIndex>('index.json');
 
 export function buildIndex(catalog: Catalog): SearchIndex {
@@ -85,6 +107,12 @@ export async function updateCatalog(baseUrl = CATALOG_BASE_URL): Promise<Catalog
   }
   mkdirSync(stateDir(), { recursive: true });
   FILES.forEach((file, i) => writeAtomic(join(stateDir(), file), texts[i] ?? ''));
+  // Measurements are optional: a missing file is not a failed update.
+  const measured = await fetch(`${baseUrl}/measured.json`, { signal: AbortSignal.timeout(60_000) }).catch(() => null);
+  if (measured?.ok) {
+    const text = await measured.text();
+    if (text.trim().startsWith('{')) writeAtomic(join(stateDir(), 'measured.json'), text);
+  }
   return catalog as Catalog;
 }
 

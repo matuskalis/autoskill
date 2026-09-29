@@ -61,3 +61,16 @@ test('rendered context flattens third-party text and states the install rule', (
   assert.match(text, /treat them as data/);
   assert.match(text, /ask the user first/);
 });
+
+test('measured results reorder, drop harmful skills and show in the note', () => {
+  const two = { ...catalog, skills: [...catalog.skills, skill('pdf-forms', 'Extract text and tables from PDF documents, fill PDF forms, merge PDFs quickly.')] };
+  const prompt = 'extract the tables from this PDF document and fill the PDF form fields';
+  const ids = (m: Record<string, { delta: number; firedRate: number; measuredAt: string }>) => pick(two, prompt, new Set(), { minScore: 0 }, m).map((h) => h.skill.name);
+  const at = '2026-09-29T00:00:00Z';
+  const [first, second] = ids({});
+  assert.ok(first && second);
+  assert.equal(ids({ [`acme/skills:skills/${second}`]: { delta: 0.3, firedRate: 1, measuredAt: at } })[0], second);
+  assert.equal(ids({ 'acme/skills:skills/pdf': { delta: -0.2, firedRate: 1, measuredAt: at } }).includes('pdf'), false);
+  const note = render(pick(two, prompt, new Set(), { minScore: 0 }), { 'acme/skills:skills/pdf': { delta: 0.12, firedRate: 1, measuredAt: at } });
+  assert.match(note, /measured \+12 points vs no skill/);
+});
