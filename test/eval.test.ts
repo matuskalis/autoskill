@@ -44,7 +44,7 @@ test('summarize averages arms and counts fired runs', () => {
       { arms: { with: [{ score: 1, graders: [fired] }], without: [{ score: 0 }] } },
     ],
   });
-  assert.deepEqual(result, { cases: 2, withScore: 0.875, withoutScore: 0.25, delta: 0.625, firedRate: 0.667, costUsd: 1.235, partial: false, ceiling: false });
+  assert.deepEqual(result, { cases: 2, withScore: 0.875, withoutScore: 0.25, delta: 0.625, firedRate: 0.667, costUsd: 1.235, partial: false, ceiling: false, discriminatingChecks: 0, focusedDelta: 0 });
 });
 
 test('summarize pairs cases and never counts an unscored run as zero', () => {
@@ -60,4 +60,21 @@ test('summarize pairs cases and never counts an unscored run as zero', () => {
   assert.equal(result.withScore, 0.8);
   assert.equal(result.withoutScore, 0.6);
   assert.equal(result.partial, true);
+});
+
+test('focusedDelta looks only at checks that separated the arms', () => {
+  const g = (name: string, passed: boolean) => ({ name, passed, withOnly: false });
+  const result = summarize({
+    costUsd: 1,
+    cases: [
+      {
+        arms: {
+          with: [{ score: 1, graders: [g('easy', true), g('hard', true)] }, { score: 1, graders: [g('easy', true), g('hard', true)] }],
+          without: [{ score: 0.5, graders: [g('easy', true), g('hard', false)] }, { score: 1, graders: [g('easy', true), g('hard', true)] }],
+        },
+      },
+    ],
+  });
+  assert.equal(result.discriminatingChecks, 1);
+  assert.equal(result.focusedDelta, 0.5);
 });

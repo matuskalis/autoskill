@@ -34,6 +34,10 @@ export interface Measurement {
   partial: boolean;
   /** The model already passed nearly every check without the skill, so the delta says nothing. */
   ceiling: boolean;
+  /** Checks that failed at least once in either arm: the only ones that can tell the arms apart. */
+  discriminatingChecks: number;
+  /** Mean pass-rate difference over those checks alone; 0 when there are none. */
+  focusedDelta: number;
 }
 
 /** Above this no-skill score there is too little headroom for a delta to mean anything. */
@@ -96,7 +100,7 @@ interface EvalRun {
   score?: number | null;
   costUsd?: number;
   judgeCostUsd?: number;
-  graders?: { withOnly?: boolean; passed?: boolean }[];
+  graders?: { name?: string; withOnly?: boolean; passed?: boolean; scored?: boolean }[];
 }
 interface EvalResult {
   costUsd: number;
@@ -113,7 +117,9 @@ const scored = (runs: readonly EvalRun[] | undefined) => (runs ?? []).filter((r)
  * the same tasks. A run without a score (skipped paid graders at the cost
  * ceiling) is left out rather than counted as zero.
  */
-export function summarize(result: EvalResult): Pick<Measurement, 'withScore' | 'withoutScore' | 'delta' | 'firedRate' | 'costUsd' | 'cases' | 'partial' | 'ceiling'> {
+export function summarize(
+  result: EvalResult,
+): Pick<Measurement, 'withScore' | 'withoutScore' | 'delta' | 'firedRate' | 'costUsd' | 'cases' | 'partial' | 'ceiling' | 'discriminatingChecks' | 'focusedDelta'> {
   const paired = result.cases.filter((c) => scored(c.arms.with).length && scored(c.arms.without).length);
   const withRuns = paired.flatMap((c) => scored(c.arms.with));
   const withScore = mean(paired.map((c) => mean(scored(c.arms.with).map((r) => r.score))));
@@ -121,6 +127,13 @@ export function summarize(result: EvalResult): Pick<Measurement, 'withScore' | '
   const fired = withRuns.filter((r) => r.graders?.some((g) => g.withOnly && g.passed)).length;
   const round = (n: number) => Math.round(n * 1000) / 1000;
   const incomplete = paired.length < result.cases.length || result.cases.some((c) => scored(c.arms.with).length !== (c.arms.with ?? []).length || scored(c.arms.without).length !== (c.arms.without ?? []).length);
+  const focused = paired.flatMap((c) => {
+    const rate = (runs: EvalRun[], name: string) => mean(runs.map((r) => (r.graders?.find((g) => g.name === name)?.passed ? 1 : 0)));
+    const names = new Set(scored(c.arms.with).flatMap((r) => (r.graders ?? []).filter((g) => !g.withOnly && g.name).map((g) => g.name as string)));
+    return [...names]
+      .map((name) => ({ with: rate(scored(c.arms.with), name), without: rate(scored(c.arms.without), name) }))
+      .filter((check) => check.with < 1 || check.without < 1);
+  });
   return {
     cases: paired.length,
     withScore: round(withScore),
@@ -130,6 +143,8 @@ export function summarize(result: EvalResult): Pick<Measurement, 'withScore' | '
     costUsd: round(result.costUsd),
     partial: Boolean(result.partial) || incomplete,
     ceiling: withoutScore >= CEILING,
+    discriminatingChecks: focused.length,
+    focusedDelta: round(mean(focused.map((check) => check.with - check.without))),
   };
 }
 
