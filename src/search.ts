@@ -30,6 +30,13 @@ const K1 = 1.2;
 const B = 0.75;
 /** A term found in more than ~20% of skills says little about fit. */
 const MIN_IDF = 1.5;
+/**
+ * A one-word name this common (review, design, test, api: in ~3% of skills) is a topic, not a task,
+ * so it ranks below specific names. A word in a handful of skills is never generic, however small the catalog.
+ */
+const GENERIC_NAME_IDF = 3.5;
+const GENERIC_NAME_MIN_DF = 20;
+const GENERIC_NAME_FACTOR = 0.7;
 
 export function stem(word: string): string {
   if (word.length >= 7 && word.endsWith('ing')) return word.slice(0, -3);
@@ -88,6 +95,8 @@ export interface Hit<T extends Searchable = Searchable> {
 
 /** Near the best score of its name, quality decides: the original beats a fork with a terser description. */
 const COPY_SCORE_SHARE = 0.6;
+/** A name published by many repos is the canonical one for its task; each e-fold of repos adds 20%. */
+const COPY_BONUS = 0.2;
 
 /**
  * Forks and mirrors publish the same skill under many paths. Show each name
@@ -106,7 +115,8 @@ function collapseCopies<T extends Searchable>(hits: Hit<T>[]): Hit<T>[] {
       const pick = copies
         .filter((hit) => hit.score >= best * COPY_SCORE_SHARE)
         .sort((a, b) => b.skill.quality - a.skill.quality || b.score - a.score)[0] as Hit<T>;
-      return { ...pick, score: best };
+      const repos = new Set(copies.map((hit) => hit.skill.id.split(':')[0])).size;
+      return { ...pick, score: best * (1 + COPY_BONUS * Math.log(repos)) };
     })
     .sort((a, b) => b.score - a.score);
 }
@@ -165,7 +175,9 @@ export class Index<T extends Searchable = Searchable> {
       const nameTerms = new Set(tokenize(skill.name.replace(/[-_]/g, ' ')));
       const informativeName = [...nameTerms].filter((term) => this.idf(term) >= MIN_IDF);
       const nameCoverage = informativeName.length ? informativeName.filter((term) => matched.includes(term)).length / informativeName.length : 0;
-      hits.push({ skill, score: score * (0.5 + skill.quality / 200), matched, nameCoverage });
+      const [onlyTerm] = informativeName;
+      const generic = informativeName.length === 1 && this.idf(onlyTerm as string) < GENERIC_NAME_IDF && this.df(onlyTerm as string) >= GENERIC_NAME_MIN_DF;
+      hits.push({ skill, score: score * (0.5 + skill.quality / 200) * (generic ? GENERIC_NAME_FACTOR : 1), matched, nameCoverage });
     }
     return collapseCopies(hits).slice(0, options.limit ?? 10);
   }
