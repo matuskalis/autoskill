@@ -137,16 +137,24 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
         const skill = findSkill(catalog, id);
         if (!skill) throw new Error(`${id} is not in the catalog`);
         if (workspace) assertWorkspaceAllowed(skill);
-        const result = await evaluate(skill, {
-          runs: Number(flag(args, '--runs') ?? 2),
-          model: flag(args, '--model') ?? 'opus',
-          judge: flag(args, '--judge') ?? 'opus',
-          maxCostUsd: Number(flag(args, '--max-cost') ?? 6),
-          workspace,
-          keepRaw: join(stateDir(), 'evals'),
-          hard: args.includes('--hard'),
-          log: (line) => console.error(`  ${line}`),
-        });
+        let result: Measurement;
+        try {
+          result = await evaluate(skill, {
+            runs: Number(flag(args, '--runs') ?? 2),
+            model: flag(args, '--model') ?? 'opus',
+            judge: flag(args, '--judge') ?? 'opus',
+            maxCostUsd: Number(flag(args, '--max-cost') ?? 6),
+            workspace,
+            keepRaw: join(stateDir(), 'evals'),
+            hard: args.includes('--hard'),
+            log: (line) => console.error(`  ${line}`),
+          });
+        } catch (error) {
+          // One refused or failed skill must not stop the rest of the batch.
+          console.error(`${skill.id}: ${error instanceof Error ? error.message : String(error)}`);
+          process.exitCode = 1;
+          continue;
+        }
         // Workspace results live beside text results; the hook reads only the text key for now.
         const suffix = result.mode === 'workspace' ? '#workspace' : args.includes('--hard') ? '#hard' : '';
         measured[`${skill.id}${suffix}`] = result;
