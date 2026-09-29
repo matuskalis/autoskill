@@ -144,10 +144,12 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
           maxCostUsd: Number(flag(args, '--max-cost') ?? 6),
           workspace,
           keepRaw: join(stateDir(), 'evals'),
+          hard: args.includes('--hard'),
           log: (line) => console.error(`  ${line}`),
         });
         // Workspace results live beside text results; the hook reads only the text key for now.
-        measured[result.mode === 'workspace' ? `${skill.id}#workspace` : skill.id] = result;
+        const suffix = result.mode === 'workspace' ? '#workspace' : args.includes('--hard') ? '#hard' : '';
+        measured[`${skill.id}${suffix}`] = result;
         writeFileSync(out, JSON.stringify(measured, null, 1) + '\n');
         const sign = result.delta >= 0 ? '+' : '';
         console.log(`${skill.id}: with ${result.withScore} without ${result.withoutScore} (${sign}${result.delta}) over ${result.cases} cases, focused ${result.focusedDelta >= 0 ? '+' : ''}${result.focusedDelta} on ${result.discriminatingChecks} checks, fired ${Math.round(result.firedRate * 100)}%, $${result.costUsd}${result.partial ? ', PARTIAL' : ''}${result.ceiling ? ', CEILING' : ''}`);
