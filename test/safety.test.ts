@@ -145,3 +145,9 @@ test('loadTimeRisks: keys and syntax that act when a skill loads', () => {
   assert.deepEqual(loadTimeRisks(md('name: a', 'State: !`git status`')), ['runs shell on load (!`…`)']);
   assert.deepEqual(loadTimeRisks(md('"allowed-tools": Bash')), ['frontmatter uses YAML this checker cannot read']);
 });
+
+test('safe: a root license with indented paragraphs is not code', () => {
+  const apache = 'Apache License\n\n      TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      "License" shall mean the terms and conditions for use.';
+  assert.deepEqual(classify(md('name: a'), [...only, { path: 'LICENSE.txt', size: 1 }], { 'LICENSE.txt': apache }), { risk: 'safe', reasons: [] });
+  assert.equal(classify(md('name: a'), [...only, { path: 'docs/guide.md', size: 1 }], { 'docs/guide.md': apache }).risk, 'review');
+});

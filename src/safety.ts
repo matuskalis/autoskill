@@ -95,7 +95,8 @@ export function classify(skillMd: string, files: readonly SkillFile[], texts: Re
     // Line-wrapped base64 (76 or 64 characters a line) is joined so the blob check sees it whole.
     const text = fold(raw).replace(/([A-Za-z0-9+/=]{40,})\r?\n(?=[A-Za-z0-9+/=]{20,})/g, '$1');
     if (DYNAMIC_CONTEXT.test(text)) reasons.push(`${path} runs shell on load (!\`…\`)`);
-    else if (FENCE.test(text) || INDENTED_CODE.test(text)) reasons.push(`${path} has code blocks`);
+    // License texts indent whole paragraphs; for a root license only a real fence counts as code.
+    else if (FENCE.test(text) || (!ROOT_LICENSE.test(path) && INDENTED_CODE.test(text))) reasons.push(`${path} has code blocks`);
     else if (COMMAND.test(text)) reasons.push(`${path} names shell or network commands`);
     else if (PERMISSIONS.test(text)) reasons.push(`${path} talks about Claude Code settings or permissions`);
     else if (REACH.some(({ pattern }) => pattern.test(text))) reasons.push(`${path} ${REACH.find(({ pattern }) => pattern.test(text))?.reason}`);
