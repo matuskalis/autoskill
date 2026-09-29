@@ -64,7 +64,21 @@ A skill that disappears upstream disappears from the catalog on the next crawl. 
 | license | 5 |
 | Anthropic's own repos | 10 |
 
-It is a static score, computed without running the skill. Measured scores (the same tasks run with and without each skill, graded) are the next step.
+It is a static score, computed without running the skill. The measured results below are the other half.
+
+## Measured uplift
+
+`autoskill eval <id>` checks whether a skill actually makes Claude better:
+
+1. A model writes three realistic tasks from the skill's **name and description only**, never its body, each with three to six pass/fail checks an expert would apply. Checks written from the body would reward the skill's own conventions.
+2. `claude plugin eval` runs every task twice with the skill loaded and twice without, on Opus 5.5, with read-only tools. `--workspace` seeds files and grants Write and Edit (never Bash) for safe-tier skills; `--hard` asks for tasks near the edge of the model's ability.
+3. An Opus judge votes on each check. The result records both arms, the delta, the delta over only the checks that separated the arms, and how often the skill actually loaded.
+
+The hook uses a measurement only when it is for the exact commit in the catalog, the skill loaded in at least half the runs, the run was not cut short by the cost ceiling, and the model scored under 0.9 without the skill. A skill measured as harmful (delta ≤ -0.05) is never suggested. Skills whose frontmatter pre-approves tools, registers hooks or runs shell on load are never evaluated, because loading them would act on the machine running the eval.
+
+**First results (29 Sep 2026, 22 popular skills, Opus 5.5):** on almost every skill the model already scored 0.9 or more without it, so there was nothing left to gain. The largest raw gain was +0.11 (a Postgres skill that loaded in only a third of runs); several skills made answers slightly worse, the clearest being a Core Web Vitals skill at -0.11. This matches the literature collected in `docs/research-skill-uplift.md`: on frontier models most public skills add nothing on questions a model can answer from general knowledge, and the gains that remain come from specific procedures, checklists and tool workflows.
+
+MEASURED_TABLE
 
 ## Commands
 
