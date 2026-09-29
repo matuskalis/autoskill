@@ -59,7 +59,7 @@ test('capture queues lines for installed skills only, never in headless runs', (
 });
 
 test('consent: asked once, off until the user turns it on, install id only while on', () => {
-  assert.match(consentPrompt() ?? '', /autoskill telemetry on/);
+  assert.match(consentPrompt() ?? '', /in a terminal outside Claude Code: node .*telemetry on/);
   assert.equal(consentPrompt(), null);
   assert.equal(readConfig().telemetry, undefined);
   assert.ok(setTelemetry(true).installId);
@@ -107,4 +107,25 @@ test('field counts keep only catalogued skills at their catalogued commit', () =
     catalog,
   );
   assert.deepEqual(counts, { 'acme/skills:skills/pdf': { helped: 3, 'no-difference': 0, hurt: 1, reasons: { 'saved-time': 3, 'outdated-or-wrong': 1 } } });
+});
+
+test('a batch whose upload failed is sent again with the next flush', async () => {
+  installed('notes');
+  setTelemetry(true);
+  const used = join(home, 'used.jsonl');
+  transcript(used, 'notes');
+  captureRatings({ session_id: 's1', transcript_path: used, last_assistant_message: 'autoskill: notes helped (saved-time)' });
+  await assert.rejects(flushRatings(async () => { throw new Error('offline'); }));
+  captureRatings({ session_id: 's2', transcript_path: used, last_assistant_message: 'autoskill: notes hurt (irrelevant)' });
+  let batch: OutgoingRating[] = [];
+  assert.equal(await flushRatings(async (_id, ratings) => void (batch = ratings)), 2);
+  assert.deepEqual(batch.map((r) => r.verdict), ['helped', 'hurt']);
+});
+
+test('telemetry on refuses without a terminal', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const result = spawnSync(process.execPath, ['src/cli.ts', 'telemetry', 'on'], { encoding: 'utf8', env: { ...process.env } });
+  assert.equal(result.status, 2);
+  assert.match(result.stdout, /terminal outside Claude Code/);
+  assert.equal(readConfig().telemetry, undefined);
 });

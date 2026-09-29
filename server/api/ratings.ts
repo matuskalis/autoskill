@@ -11,12 +11,14 @@ import { createHash } from 'node:crypto';
 const VERDICTS = new Set(['helped', 'no-difference', 'hurt']);
 const REASONS = new Set(['followed-steps', 'saved-time', 'irrelevant', 'outdated-or-wrong', 'conflicted', 'too-long']);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-const SKILL_ID = /^[A-Za-z0-9_.-]{1,39}\/[A-Za-z0-9_.-]{1,100}:[^\u0000-\u001f\u007f]{0,150}$/;
+/** owner/repo:path, path characters only: nothing a reader of the counts could take as text. Mirrored by a check in SQL. */
+const SKILL_ID = /^[A-Za-z0-9_.-]{1,39}\/[A-Za-z0-9_.-]{1,100}:[A-Za-z0-9_./-]{0,150}$/;
 const SHA = /^[0-9a-f]{40}$/;
 const MAX_BODY_BYTES = 20_000;
 const MAX_BATCH = 50;
 export const PER_INSTALL_PER_DAY = 100;
 export const PER_IP_PER_DAY = 500;
+const PAGE = 1000;
 
 export interface Rating {
   skillId: string;
@@ -64,14 +66,6 @@ async function rest(path: string, init: RequestInit = {}): Promise<Response> {
   return response;
 }
 
-async function countToday(column: 'install_id' | 'ip_hash', value: string, day: string): Promise<number> {
-  const response = await rest(`ratings?${column}=eq.${encodeURIComponent(value)}&created_on=eq.${day}&select=id`, {
-    method: 'HEAD',
-    headers: { Prefer: 'count=exact' },
-  });
-  return Number(response.headers.get('content-range')?.split('/')[1] ?? '0');
-}
-
 const json = (status: number, body: unknown, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...headers } });
 
@@ -92,18 +86,14 @@ export async function POST(request: Request): Promise<Response> {
     const day = new Date().toISOString().slice(0, 10);
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     const hashed = ipHash(ip, env('IP_SALT'), day);
-    const [byInstall, byIp] = await Promise.all([countToday('install_id', valid.installId, day), countToday('ip_hash', hashed, day)]);
-    if (byInstall + valid.ratings.length > PER_INSTALL_PER_DAY || byIp + valid.ratings.length > PER_IP_PER_DAY) {
-      return json(429, { error: 'daily limit reached' });
-    }
-
-    const rows = valid.ratings.map((r) => ({ install_id: valid.installId, ip_hash: hashed, skill_id: r.skillId, sha: r.sha, verdict: r.verdict, reason: r.reason }));
-    await rest('ratings?on_conflict=install_id,skill_id,sha,created_on', {
+    // Limits and insert run in one Postgres transaction with advisory locks: parallel requests cannot race them.
+    const response = await rest('rpc/submit_ratings', {
       method: 'POST',
-      headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' },
-      body: JSON.stringify(rows),
+      body: JSON.stringify({ p_install: valid.installId, p_ip_hash: hashed, p_rows: valid.ratings, p_per_install: PER_INSTALL_PER_DAY, p_per_ip: PER_IP_PER_DAY }),
     });
-    return json(202, { accepted: rows.length });
+    const inserted = Number(await response.json());
+    if (inserted < 0) return json(429, { error: 'daily limit reached' });
+    return json(202, { accepted: inserted });
   } catch {
     return json(500, { error: 'server error' });
   }
@@ -111,8 +101,15 @@ export async function POST(request: Request): Promise<Response> {
 
 export async function GET(): Promise<Response> {
   try {
-    const response = await rest('rating_counts?select=skill_id,sha,verdict,reason,installs&limit=100000');
-    return json(200, await response.json(), { 'cache-control': 'public, s-maxage=3600, stale-while-revalidate=600' });
+    // PostgREST returns at most its max-rows per response; page until a short page, in a stable order.
+    const all: unknown[] = [];
+    for (let offset = 0; ; offset += PAGE) {
+      const response = await rest(`rating_counts?select=skill_id,sha,verdict,reason,installs&order=skill_id,sha,verdict,reason&offset=${offset}&limit=${PAGE}`);
+      const page = (await response.json()) as unknown[];
+      all.push(...page);
+      if (page.length < PAGE) break;
+    }
+    return json(200, all, { 'cache-control': 'public, s-maxage=3600, stale-while-revalidate=600' });
   } catch {
     return json(500, { error: 'server error' });
   }

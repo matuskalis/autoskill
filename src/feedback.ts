@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { appendFileSync, createReadStream, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { appendFileSync, createReadStream, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { listInstalled } from './install.ts';
-import { stateDir } from './paths.ts';
+import { PACKAGE_ROOT, stateDir } from './paths.ts';
 
 /**
  * Skill ratings: Claude ends a reply that used an autoskill-installed skill
@@ -68,7 +68,7 @@ export function consentPrompt(): string | null {
   const config = readConfig();
   if (config.telemetry || config.askedAt) return null;
   writeConfig({ ...config, askedAt: new Date().toISOString() });
-  return 'autoskill: share anonymous skill ratings to improve the catalog for everyone? A rating is the skill, a verdict and a reason code; never your prompts, code or identity. Run `autoskill telemetry on` to share, or ignore this to keep it off.';
+  return `autoskill: share anonymous skill ratings to improve the catalog for everyone? A rating is the skill, a verdict and a reason code; never your prompts, code or identity. To share, run this in a terminal outside Claude Code: node "${join(PACKAGE_ROOT, 'src', 'cli.ts')}" telemetry on. Ignore this to keep it off.`;
 }
 
 /** Parses the rating lines from the end of a reply; anything off-format is ignored. */
@@ -146,9 +146,17 @@ export interface OutgoingRating {
  */
 export async function flushRatings(send: (installId: string, ratings: OutgoingRating[]) => Promise<void> = postRatings): Promise<number> {
   const file = queueFile();
-  if (!existsSync(file)) return 0;
   const draining = `${file}.draining`;
-  renameSync(file, draining);
+  // A batch whose upload failed stays in the draining file and goes out with the next one.
+  const leftover = existsSync(draining) ? readFileSync(draining, 'utf8') : '';
+  if (existsSync(file)) {
+    const fresh = readFileSync(file, 'utf8');
+    // Bounded: a server that stays down must not grow this file forever.
+    writeFileSync(draining, (leftover + fresh).split('\n').filter(Boolean).slice(-2000).join('\n') + '\n');
+    rmSync(file, { force: true });
+  } else if (!leftover.trim()) {
+    return 0;
+  }
   const queued = readFileSync(draining, 'utf8')
     .split('\n')
     .flatMap((line) => {

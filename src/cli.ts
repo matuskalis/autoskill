@@ -9,7 +9,7 @@ import { assertWorkspaceAllowed, evaluate, type Measurement } from './eval.ts';
 import { main as hook } from './hook.ts';
 import { install, listInstalled, ReviewRequired, uninstall } from './install.ts';
 import { Index } from './search.ts';
-import { stateDir } from './paths.ts';
+import { PACKAGE_ROOT, stateDir } from './paths.ts';
 import { oneLine } from './text.ts';
 import type { Catalog } from './types.ts';
 import { skillUsage } from './usage.ts';
@@ -159,6 +159,13 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
     }
     case 'telemetry': {
       const choice = positional(args)[0];
+      // Turning sharing on needs a person at a terminal: Claude's Bash tool has no TTY, so a skill that
+      // tells Claude to run this cannot opt the user in. Turning it off works from anywhere.
+      if (choice === 'on' && !(process.stdin.isTTY && process.stdout.isTTY)) {
+        console.log(`not changed: turn sharing on yourself, in a terminal outside Claude Code:\n  node "${join(PACKAGE_ROOT, 'src', 'cli.ts')}" telemetry on`);
+        process.exitCode = 2;
+        return;
+      }
       if (choice === 'on' || choice === 'off') setTelemetry(choice === 'on');
       const config = readConfig();
       return console.log(
