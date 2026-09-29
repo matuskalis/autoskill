@@ -1,6 +1,6 @@
 # autoskill
 
-Claude Code gets better with the right skill, and there are tens of thousands of them on GitHub. Nobody installs the right one at the right moment. autoskill does it for you: on every prompt it looks through a rated catalog of public skills, and when one clearly fits the task, Claude installs it (pinned to a commit) and uses it straight away. Skills you stop using get pruned.
+Claude Code gets better with the right skill, and there are tens of thousands of them on GitHub. Nobody installs the right one at the right moment. autoskill does it for you: on every prompt it looks through a rated catalog of public skills, and when one clearly fits the task, Claude installs it, pinned to a commit (safe skills directly, others after asking you), and uses it straight away. `autoskill prune` removes the ones you stopped using.
 
 ```
 you:     fill in this PDF form and merge it with the cover letter
@@ -27,7 +27,7 @@ The plugin adds a `UserPromptSubmit` hook, the `/autoskill` skill and the `autos
 
 ## How it decides
 
-1. **The hook runs locally on every prompt**, with no network access and no model call, in about 0.15 s. It scores the prompt against the catalog with BM25 over each skill's name and description, weighted by the skill's quality score. Most prompts produce nothing: replaying 120 real prompts, it spoke on 5% of them. On a labelled set of 156 synthetic prompts (`scripts/bench-hook.ts`) it fires on 8% of prompts that should stay silent, with 67% top-1 precision and 65% recall. It suggests at most three skills, only when at least two informative words match, most of the skill's own name is in the prompt, and the score clears a threshold. Copies of the same skill collapse into one, and the original wins over a fork. It never suggests a skill you already have, and never the same skill twice in one session.
+1. **The hook runs locally on every prompt** in under 0.2 s, with no model call; at most once a day it starts a background catalog download when the local copy is over a week old. It scores the prompt against the catalog with BM25 over each skill's name and description, weighted by the skill's quality score. Most prompts produce nothing: replaying 120 real prompts, it spoke on 5% of them. On a labelled set of 156 synthetic prompts (`scripts/bench-hook.ts`) it fires on 8% of prompts that should stay silent, with 67% top-1 precision and 65% recall. It suggests at most three skills, only when at least two informative words match, most of the skill's own name is in the prompt, and the score clears a threshold. Copies of the same skill collapse into one, and the original wins over a fork. It never suggests a skill you already have, and never the same skill twice in one session.
 2. **Claude makes the call.** It gets the candidates as context, marked as untrusted third-party text, and installs one only if it clearly fits and no installed skill covers the task: a safe one with `autoskill add`, a review one only after asking you.
 3. **Install is pinned and checked.** Files come from the exact commit in the catalog. The SKILL.md hash must match, and the downloaded files are classified again before anything is written. A folder autoskill did not create is never touched. If `~/.claude` is a git repo, installed skills are added to `skills/.gitignore`.
 4. **Claude reads the new SKILL.md and follows it** for the current task. Claude Code also picks up the new skill for the rest of the session.
@@ -37,13 +37,13 @@ The plugin adds a `UserPromptSubmit` hook, the `/autoskill` skill and the `autos
 | tier | means | install |
 |---|---|---|
 | `safe` | prose only: text files, descriptive frontmatter, no code blocks, no commands | `autoskill add`, automatic |
-| `review` | ships code, sets `allowed-tools`, `hooks`, `shell`, `model` or any other behaviour key, uses YAML the checker cannot read, runs `` !`cmd` `` on load, contains a code block, or names shell and network commands | Claude asks you, then `autoskill install --yes` |
+| `review` | ships code, sets `allowed-tools`, `hooks`, `shell`, `model` or any other behaviour key, uses YAML the checker cannot read, runs `` !`cmd` `` on load, contains a code block, names shell or network commands, talks about Claude Code settings or permissions, MCP tools, git hooks, CLAUDE.md or startup paths, points at remote instructions, carries an encoded blob, or tells Claude to run something | Claude asks you, then `autoskill install --yes` |
 
 The check fails closed, so most skills land in `review`: about one skill in ten is `safe`. "Safe" means the skill cannot make Claude run anything by itself. It does not mean every instruction in it is good advice.
 
 ## The catalog
 
-`catalog/catalog.json` is rebuilt every Monday by a GitHub Action (`.github/workflows/crawl.yml`), along with `catalog/index.json`, a slim prebuilt search index the hook loads. The crawl collects repos under the topics in `catalog/sources.json` plus a list of known repos, finds every `SKILL.md` in the git tree, reads the skill's text files from one tarball per repo, and drops:
+`catalog/catalog.json` is set to be rebuilt every Monday by a GitHub Action (`.github/workflows/crawl.yml`), along with `catalog/index.json`, a slim prebuilt search index the hook loads. The crawl collects repos under the topics in `catalog/sources.json` plus a list of known repos, finds every `SKILL.md` in the git tree, reads the skill's text files from one tarball per repo, and drops:
 
 - archived repos,
 - skills with no description,
@@ -60,7 +60,7 @@ A skill that disappears upstream disappears from the catalog on the next crawl. 
 | stars | up to 30, 7.5 per decade (10, 100, 1k, 10k) |
 | last push | 20 within 90 days, 12 within a year, 5 within two |
 | description | 15 for 40 to 1536 characters, +10 if it says when to use it |
-| body | 10 for 300 characters to 60 kB |
+| body | 10 for 300 characters to 60 kB, 3 otherwise |
 | license | 5 |
 | Anthropic's own repos | 10 |
 
@@ -70,13 +70,13 @@ It is a static score, computed without running the skill. The measured results b
 
 `autoskill eval <id>` checks whether a skill actually makes Claude better:
 
-1. A model writes three realistic tasks from the skill's **name and description only**, never its body, each with three to six pass/fail checks an expert would apply. Checks written from the body would reward the skill's own conventions.
+1. A model writes three realistic tasks from the skill's **name and description only** (except with `--grounded`), each with three to six pass/fail checks an expert would apply. Checks written from the body would reward the skill's own conventions.
 2. `claude plugin eval` runs every task twice with the skill loaded and twice without, on Opus 5.5, with read-only tools. `--workspace` seeds files and grants Write and Edit (never Bash) for safe-tier skills; `--hard` asks for tasks near the edge of the model's ability; `--grounded` lets the generator read the skill so checks can test facts it states (versions, APIs, limits), never style.
-3. An Opus judge votes on each check. The result records both arms, the delta, the delta over only the checks that separated the arms, and how often the skill actually loaded.
+3. An Opus judge votes on each check. The result records both arms, the delta, the delta over only the checks that failed at least once in either arm, and how often the skill actually loaded.
 
-The hook uses a measurement only when it is for the exact commit in the catalog, the skill loaded in at least half the runs, the run was not cut short by the cost ceiling, and the model scored under 0.9 without the skill. A skill measured as harmful (delta ≤ -0.05) is never suggested. Skills whose frontmatter pre-approves tools, registers hooks or runs shell on load are never evaluated, because loading them would act on the machine running the eval.
+The hook uses a measurement only when it is for the exact commit in the catalog, the skill loaded in at least half the runs, the run was not cut short by the cost ceiling, and the model scored under 0.9 without the skill. A skill measured as harmful (delta ≤ -0.05) is never suggested. Only plain text-mode measurements feed the hook, and none of the current ones meets all four conditions yet, so they do not change any suggestion today. Skills whose frontmatter pre-approves tools, registers hooks or runs shell on load are never evaluated, because loading them would act on the machine running the eval.
 
-**First results (29 Sep 2026, 23 popular skills, 30 runs, Opus 5.5):** on almost every skill the model already scored 0.9 or more without it, so there was nothing left to gain. The largest raw gain was +0.11 (a Postgres skill that loaded in only a third of runs); several skills made answers slightly worse, the clearest being a Core Web Vitals skill at -0.11. Tasks generated to be harder did not escape the ceiling either, and neither did skills for frameworks newer than the model's training cutoff. The reason is structural: the task writer is the same model, so it cannot write a check for knowledge it does not have. `--grounded` is the answer to that, at the price of trusting the skill's own claims. This matches the literature collected in `docs/research-skill-uplift.md`: on frontier models most public skills add nothing on questions a model can answer from general knowledge, and the gains that remain come from specific procedures, checklists and tool workflows.
+**First results (29 Sep 2026, Opus 5.5):** on almost every skill the model already scored 0.9 or more without it, so there was nothing left to gain. The largest raw gain was +0.11 (a Postgres skill that loaded in only a third of runs); several skills made answers slightly worse, the clearest being a Core Web Vitals skill at -0.11. Tasks generated to be harder did not escape the ceiling either, and neither did skills for frameworks newer than the model's training cutoff. The reason is structural: the task writer is the same model, so it cannot write a check for knowledge it does not have. `--grounded` is meant to address that, at the price of trusting the skill's own claims. This matches the literature collected in `docs/research-skill-uplift.md`: on frontier models most public skills add nothing on questions a model can answer from general knowledge, and the gains that remain come from specific procedures, checklists and tool workflows.
 
 | skill | tasks | without | with | delta | focused delta (checks) | fired | note |
 |---|---|---|---|---|---|---|---|
@@ -111,7 +111,7 @@ The hook uses a measurement only when it is for the exact commit in the catalog,
 | [internal-comms](https://github.com/anthropics/skills/tree/33375500bcea98d610eb30ce10ac4e59b89c390d/skills/internal-comms) | text | 0.90 | 0.83 | -0.07 | -0.33 (3) | 100% | ceiling |
 | [core-web-vitals](https://github.com/addyosmani/web-quality-skills/tree/afa8da942115f2961fdbfa80807ea0b232ff6c00/skills/core-web-vitals) | text | 0.97 | 0.86 | -0.11 | -0.67 (3) | 100% | ceiling |
 
-"text" tasks are answered in one reply; "hard" tasks were generated to sit at the edge of the model's ability; "workspace" tasks edit seeded files. Each row is 3 tasks x 2 runs per arm; deltas under about 0.1 are within judge noise. Raw results: `catalog/measured.json`.
+"text" tasks are answered in one reply; "hard" tasks were generated to sit at the edge of the model's ability; "workspace" tasks edit seeded files. Each row is 3 tasks x 2 runs per arm (the workspace row 1 run); deltas under about 0.1 are within judge noise. Raw results: `catalog/measured.json`.
 
 ## Commands
 
@@ -126,6 +126,7 @@ autoskill stats [--days N]        use counts for every skill, from your local tr
 autoskill prune [--days N] [--apply]
                                   remove installed skills unused for N days (default 30)
 autoskill eval <id...>            measure a skill: generated tasks with and without it, judged per check
+                                  [--runs 2] [--max-cost 15] [--hard | --grounded | --workspace]
 autoskill update                  download the latest catalog
 autoskill crawl [--repos a/b,c/d] rebuild the catalog from GitHub
 ```
@@ -136,7 +137,7 @@ Usage is read from Claude Code's transcripts in `~/.claude/projects`, on your ma
 
 - Matching is lexical. The catalog is in English, so a prompt in another language rarely triggers a suggestion. `/autoskill` translates the task before searching.
 - The quality score rates popularity and upkeep, not whether a skill actually makes Claude better.
-- A repo with a `SKILL.md` at its root and more than 60 files is skipped.
+- A skill whose folder holds more than 60 files or any symlink is skipped, and at most 400 skills are taken per repo.
 
 ## Development
 

@@ -28,7 +28,7 @@ const HELP = `autoskill: find, rate and install Claude Code skills
                                   measure a skill: generated tasks run with and without it, judged per check;
                                   --workspace seeds files and grants Write and Edit, safe-tier skills only
   autoskill update                download the latest catalog
-  autoskill crawl [--out dir] [--repos a/b,c/d]
+  autoskill crawl [--out dir] [--repos a/b,c/d] [--force]
                                   rebuild the catalog from GitHub
   autoskill hook                  the UserPromptSubmit hook (reads JSON on stdin)`;
 
@@ -144,7 +144,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
             runs: Number(flag(args, '--runs') ?? 2),
             model: flag(args, '--model') ?? 'opus',
             judge: flag(args, '--judge') ?? 'opus',
-            maxCostUsd: Number(flag(args, '--max-cost') ?? 6),
+            maxCostUsd: Number(flag(args, '--max-cost') ?? 15),
             workspace,
             keepRaw: join(stateDir(), 'evals'),
             hard: args.includes('--hard'),
