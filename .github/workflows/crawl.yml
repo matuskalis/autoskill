@@ -48,7 +48,8 @@ jobs:
         run: |
           publish="$RUNNER_TEMP/publish"
           mkdir "$publish"
-          cp "$RUNNER_TEMP/out/catalog.json" "$RUNNER_TEMP/out/index.json" catalog/measured.json "$publish/"
+          node src/cli.ts field --catalog "$RUNNER_TEMP/out/catalog.json" --out "$RUNNER_TEMP/out/field.json"
+          cp "$RUNNER_TEMP/out/catalog.json" "$RUNNER_TEMP/out/index.json" "$RUNNER_TEMP/out/field.json" catalog/measured.json "$publish/"
           cd "$publish"
           git init -q -b catalog
           git config user.name "autoskill-crawler"

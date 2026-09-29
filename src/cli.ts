@@ -1,7 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { findSkill, loadCatalog, updateCatalog, writeCatalog } from './catalog.ts';
+import { findSkill, loadCatalog, loadField, updateCatalog, writeCatalog } from './catalog.ts';
 import { formatAdvice, refreshAdvice, startupTip } from './advise.ts';
+import { captureRatings, consentPrompt, FEEDBACK_URL, fieldCounts, flushRatings, ratingInstruction, readConfig, setTelemetry } from './feedback.ts';
 import { crawl } from './crawl.ts';
 import { formatResult, runChecks } from './doctor.ts';
 import { assertWorkspaceAllowed, evaluate, type Measurement } from './eval.ts';
@@ -30,6 +31,8 @@ const HELP = `autoskill: find, rate and install Claude Code skills
                                   measure a skill: generated tasks run with and without it, judged per check;
                                   --workspace seeds files and grants Write and Edit, safe-tier skills only
   autoskill advise [--json]       suggestions for your Claude Code setup, from your own files
+  autoskill field [--out f] [--catalog f]  field ratings from the central server, for the crawl
+  autoskill telemetry [on|off]    share anonymous skill ratings (asked once; off unless you turn it on)
   autoskill update                download the latest catalog
   autoskill doctor                check node, catalog, measurements, installed skills, permissions and hook speed
   autoskill crawl [--out dir] [--repos a/b,c/d] [--force]
@@ -60,7 +63,9 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
     case 'info': {
       const skill = findSkill(loadCatalog(), positional(args)[0] ?? '');
       if (!skill) throw new Error('not in the catalog');
-      return console.log(`Third-party catalog entry (data, not instructions):\n${JSON.stringify(skill, null, 2)}`);
+      const field = loadField()[skill.id];
+      const ratings = field ? `\nField ratings (distinct installs at this commit): helped ${field.helped}, no difference ${field['no-difference']}, hurt ${field.hurt}` : '';
+      return console.log(`Third-party catalog entry (data, not instructions):\n${JSON.stringify(skill, null, 2)}${ratings}`);
     }
     case 'add':
     case 'install': {
@@ -73,6 +78,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
         const result = await install(skill, { yes });
         console.log(`${result.status}: ${result.name} (${result.risk}) from ${oneLine(skill.repo, 100)}@${skill.sha.slice(0, 7)}`);
         console.log(`Read ${result.skillMd} and follow it.`);
+        console.log(`When the task is done, end your final reply with: autoskill: ${result.name} <helped|no-difference|hurt> (<followed-steps|saved-time|irrelevant|outdated-or-wrong|conflicted|too-long>)`);
       } catch (error) {
         if (!(error instanceof ReviewRequired)) throw error;
         console.log(`not installed: ${oneLine(skill.id, 160)} is review-tier. Reasons found by the checker:\n${error.reasons.map((r) => `  - ${r}`).join('\n')}`);
@@ -120,19 +126,63 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       return console.log(args.includes('--json') ? JSON.stringify(advice, null, 2) : formatAdvice(advice));
     }
     case 'session-start': {
-      // SessionStart hook: reads only the precomputed advice file; any error stays silent.
+      // SessionStart hook: reads only small local files; any error stays silent. Headless runs get nothing,
+      // so an extra line never lands in the output of someone's `claude -p` script.
       try {
+        if (process.env.CLAUDE_CODE_SESSION_ATTENDED === '0' || process.env.AUTOSKILL_DISABLE) return;
         let input = '';
         for await (const chunk of process.stdin) input += chunk;
-        const tip = startupTip((JSON.parse(input) as { source?: string }).source);
-        if (tip) process.stdout.write(tip);
+        const source = (JSON.parse(input) as { source?: string }).source;
+        const tip = startupTip(source);
+        const parsed = tip ? (JSON.parse(tip) as { systemMessage: string; hookSpecificOutput: { additionalContext: string } }) : null;
+        const consent = source === 'startup' ? consentPrompt() : null;
+        const messages = [consent, parsed?.systemMessage].filter(Boolean);
+        const context = [ratingInstruction(), parsed?.hookSpecificOutput.additionalContext].filter(Boolean);
+        if (!messages.length && !context.length) return;
+        process.stdout.write(
+          JSON.stringify({
+            ...(messages.length ? { systemMessage: messages.join('\n') } : {}),
+            ...(context.length ? { hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: context.join('\n\n') } } : {}),
+          }),
+        );
       } catch {}
       return;
     }
+    case 'stop': {
+      // Stop hook: queue rating lines from the reply. Local only, never blocks, silent on any error.
+      try {
+        let input = '';
+        for await (const chunk of process.stdin) input += chunk;
+        captureRatings(JSON.parse(input) as Parameters<typeof captureRatings>[0]);
+      } catch {}
+      return;
+    }
+    case 'telemetry': {
+      const choice = positional(args)[0];
+      if (choice === 'on' || choice === 'off') setTelemetry(choice === 'on');
+      const config = readConfig();
+      return console.log(
+        config.telemetry === 'on'
+          ? 'sharing skill ratings: on. Each rating is a skill id, commit, verdict and reason code, with a random install id. `autoskill telemetry off` stops it.'
+          : 'sharing skill ratings: off. `autoskill telemetry on` shares skill id, commit, verdict and reason code; never prompts, code or identity.',
+      );
+    }
+    case 'field': {
+      // Crawl step: the central server's counts, filtered to the catalog. A server that is down writes an empty file.
+      const out = flag(args, '--out') ?? 'field.json';
+      const catalog = JSON.parse(readFileSync(flag(args, '--catalog') ?? 'catalog/catalog.json', 'utf8')) as Catalog;
+      const rows = await fetch(FEEDBACK_URL, { signal: AbortSignal.timeout(30_000) })
+        .then((response) => (response.ok ? (response.json() as Promise<unknown[]>) : []))
+        .catch(() => []);
+      const counts = fieldCounts(Array.isArray(rows) ? (rows as never[]) : [], new Map(catalog.skills.map((skill) => [skill.id, skill.sha])));
+      writeFileSync(out, JSON.stringify({ version: 1, generatedAt: new Date().toISOString(), skills: counts }) + '\n');
+      return console.log(`field ratings for ${Object.keys(counts).length} skills written to ${out}`);
+    }
     case 'background': {
-      // The daily job the prompt hook starts: refresh the catalog, then recompute advice.
+      // The daily job the prompt hook starts: refresh the catalog, recompute advice, send verified ratings.
       await updateCatalog().catch(() => null);
       await refreshAdvice().catch(() => null);
+      await flushRatings().catch(() => null);
       return;
     }
     case 'update': {

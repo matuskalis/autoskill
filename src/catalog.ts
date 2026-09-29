@@ -112,15 +112,25 @@ export async function updateCatalog(baseUrl = CATALOG_BASE_URL): Promise<Catalog
   }
   mkdirSync(stateDir(), { recursive: true });
   FILES.forEach((file, i) => writeAtomic(join(stateDir(), file), texts[i] ?? ''));
-  // Measurements are optional: a missing file is not a failed update.
-  const measured = await fetch(`${baseUrl}/measured.json`, { signal: AbortSignal.timeout(60_000) }).catch(() => null);
-  if (measured?.ok) {
-    const text = await measured.text();
-    if (text.trim().startsWith('{')) writeAtomic(join(stateDir(), 'measured.json'), text);
+  // Measurements and field ratings are optional: a missing file is not a failed update.
+  for (const file of ['measured.json', 'field.json']) {
+    const response = await fetch(`${baseUrl}/${file}`, { signal: AbortSignal.timeout(60_000) }).catch(() => null);
+    if (!response?.ok) continue;
+    const text = await response.text();
+    if (text.trim().startsWith('{')) writeAtomic(join(stateDir(), file), text);
   }
   return catalog as Catalog;
 }
 
 export function findSkill(catalog: Catalog, idOrName: string) {
   return catalog.skills.find((skill) => skill.id === idOrName) ?? catalog.skills.find((skill) => skill.name === idOrName);
+}
+
+/** Field ratings by skill id from the last update: display only, never ranking. */
+export function loadField(): Record<string, { helped: number; 'no-difference': number; hurt: number }> {
+  try {
+    return (JSON.parse(readFileSync(join(stateDir(), 'field.json'), 'utf8')) as { skills?: Record<string, { helped: number; 'no-difference': number; hurt: number }> }).skills ?? {};
+  } catch {
+    return {};
+  }
 }
