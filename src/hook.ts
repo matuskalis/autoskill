@@ -58,13 +58,34 @@ function installedNames(cwd: string | undefined): Set<string> {
   return names;
 }
 
-export function pick(index: Pick<SearchIndex, 'skills' | 'postings'>, prompt: string, exclude: ReadonlySet<string>): Hit[] {
+export interface Gates {
+  minMatchedTerms: number;
+  minScore: number;
+  minNameCoverage: number;
+  minKnownShare: number;
+}
+
+export const DEFAULT_GATES: Gates = {
+  minMatchedTerms: MIN_MATCHED_TERMS,
+  minScore: MIN_SCORE,
+  minNameCoverage: MIN_NAME_COVERAGE,
+  minKnownShare: MIN_KNOWN_SHARE,
+};
+
+/** `gates` overrides the calibrated thresholds; only the benchmark passes it. */
+export function pick(
+  index: Pick<SearchIndex, 'skills' | 'postings'>,
+  prompt: string,
+  exclude: ReadonlySet<string>,
+  gates: Partial<Gates> = {},
+): Hit[] {
+  const { minMatchedTerms, minScore, minNameCoverage, minKnownShare } = { ...DEFAULT_GATES, ...gates };
   if (prompt.trim().startsWith('/') || HARNESS_TEXT.test(prompt) || tokenize(prompt).length < MIN_PROMPT_TERMS) return [];
   const search = new Index(index.skills, index.postings);
-  if (search.knownShare(prompt) < MIN_KNOWN_SHARE) return [];
+  if (search.knownShare(prompt) < minKnownShare) return [];
   return search
     .search(prompt, { limit: 10, exclude })
-    .filter((hit) => hit.matched.length >= MIN_MATCHED_TERMS && hit.score >= MIN_SCORE && hit.nameCoverage >= MIN_NAME_COVERAGE)
+    .filter((hit) => hit.matched.length >= minMatchedTerms && hit.score >= minScore && hit.nameCoverage >= minNameCoverage)
     .slice(0, MAX_SUGGESTIONS);
 }
 

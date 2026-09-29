@@ -1,0 +1,156 @@
+{"prompt": "extract all the tables from the quarterly report PDF into CSV files", "expect": ["pdf", "pdf-processing", "pdf-processing-pro", "pdf-processor", "pdf-toolkit", "pdf-extraction-guide", "pdf-analysis", "convert-pdf-to-md", "pdftk-server", "pdf-explore", "oma-pdf"], "kind": "specialised"}
+{"prompt": "fill in the fields of this PDF application form from the data in applicant.json", "expect": ["pdf", "pdf-processing", "pdf-processing-pro", "pdf-processor", "pdf-toolkit", "pdf-extraction-guide", "pdf-analysis", "convert-pdf-to-md", "pdftk-server", "pdf-explore", "oma-pdf"], "kind": "specialised"}
+{"prompt": "merge these three scanned PDFs into one and add page numbers", "expect": ["pdf", "pdf-processing", "pdf-processing-pro", "pdf-processor", "pdf-toolkit", "pdf-extraction-guide", "pdf-analysis", "convert-pdf-to-md", "pdftk-server", "pdf-explore", "oma-pdf"], "kind": "specialised"}
+{"prompt": "build an excel spreadsheet with a monthly budget, formulas for totals and a chart per category", "expect": ["xlsx", "xlsx-toolkit", "excel-generator", "spreadsheet", "spreadsheet-analysis", "add-excel", "large-excel-analysis-and-formatting"], "kind": "specialised"}
+{"prompt": "read sales.xlsx and add a pivot table sheet summarising revenue by region", "expect": ["xlsx", "xlsx-toolkit", "excel-generator", "spreadsheet", "spreadsheet-analysis", "add-excel", "large-excel-analysis-and-formatting"], "kind": "specialised"}
+{"prompt": "generate a Word document from this markdown spec with headings, a table of contents and our letterhead", "expect": ["docx", "docx-toolkit", "docx-tracked-changes", "docx-cli", "docx-comment-reply"], "kind": "specialised"}
+{"prompt": "edit contract.docx with tracked changes so legal can see what I altered", "expect": ["docx", "docx-toolkit", "docx-tracked-changes", "docx-cli", "docx-comment-reply"], "kind": "specialised"}
+{"prompt": "make a 10 slide powerpoint deck for the investor meeting from these notes", "expect": ["pptx", "pptx-generator", "pptx-toolkit", "slides", "slide-deck", "slide-deck-generator", "md-slides", "frontend-slides"], "kind": "specialised"}
+{"prompt": "update the pptx template so every slide uses the new logo and footer", "expect": ["pptx", "pptx-generator", "pptx-toolkit", "slides", "slide-deck", "slide-deck-generator", "md-slides", "frontend-slides"], "kind": "specialised"}
+{"prompt": "build an MCP server that exposes our internal ticketing REST API as tools", "expect": ["mcp-builder", "mcp-server", "mcp-server-builder", "build-mcp-server", "mcp-developer", "mcp-integration"], "kind": "specialised"}
+{"prompt": "write an mcp server in python for the weather API so claude can call it", "expect": ["mcp-builder", "mcp-server", "mcp-server-builder", "build-mcp-server", "mcp-developer", "mcp-integration"], "kind": "specialised"}
+{"prompt": "draft the weekly status update for leadership covering progress, plans and problems", "expect": ["internal-comms", "weekly-update", "status-update-generator", "stakeholder-communication"], "kind": "specialised"}
+{"prompt": "write an internal company newsletter announcing the new office policy", "expect": ["internal-comms", "weekly-update", "status-update-generator", "stakeholder-communication"], "kind": "specialised"}
+{"prompt": "use playwright to test the signup flow of my local web app running on port 3000", "expect": ["webapp-testing", "playwright", "playwright-skill", "playwright-cli", "playwright-expert", "playwright-pro", "e2e-testing", "e2e-testing-patterns", "playwright-generate-test", "playwright-automation", "qa-testing-playwright"], "kind": "specialised"}
+{"prompt": "write end to end browser tests for the checkout page and capture screenshots on failure", "expect": ["webapp-testing", "playwright", "playwright-skill", "playwright-cli", "playwright-expert", "playwright-pro", "e2e-testing", "e2e-testing-patterns", "playwright-generate-test", "playwright-automation", "qa-testing-playwright"], "kind": "specialised"}
+{"prompt": "the reviewer left twelve comments on my pull request, go through the code review feedback and address each one", "expect": ["receiving-code-review", "code-review", "gsd-code-review-fix"], "kind": "specialised"}
+{"prompt": "I got code review feedback saying my error handling is wrong, evaluate whether the reviewer is right before changing anything", "expect": ["receiving-code-review", "code-review", "gsd-code-review-fix"], "kind": "specialised"}
+{"prompt": "request a code review of my branch before I merge it into main", "expect": ["requesting-code-review", "code-review", "code-reviewer", "code-review-checklist", "code-review-excellence"], "kind": "specialised"}
+{"prompt": "there's an intermittent bug where orders get duplicated, debug it systematically and find the root cause before fixing", "expect": ["systematic-debugging", "debug", "debugging", "debugging-strategies", "debugging-and-error-recovery", "debugger"], "kind": "specialised"}
+{"prompt": "the tests fail only on CI with a segfault, help me debug the root cause step by step", "expect": ["systematic-debugging", "debug", "debugging", "debugging-strategies", "debugging-and-error-recovery", "debugger"], "kind": "specialised"}
+{"prompt": "write a conventional commit message for the staged changes", "expect": ["git-commit", "git-commits", "commit", "conventional-commit", "conventional-commits", "commit-messages", "generating-conventional-commits", "git-commit-smart", "smart-commit", "dev-git-commit-message"], "kind": "specialised"}
+{"prompt": "generate the changelog for release 2.4.0 from the commits since the last tag", "expect": ["changelog", "changelog-generator", "changelog-from-commits", "changelog-automation", "create-changelog", "update-changelog", "release-notes", "generate-release-notes", "gen-release-notes", "changelog-manager"], "kind": "specialised"}
+{"prompt": "write release notes for version 3.1 based on the merged pull requests", "expect": ["changelog", "changelog-generator", "changelog-from-commits", "changelog-automation", "create-changelog", "update-changelog", "release-notes", "generate-release-notes", "gen-release-notes", "changelog-manager"], "kind": "specialised"}
+{"prompt": "this postgres query takes 8 seconds, optimize the SQL and suggest indexes", "expect": ["sql-optimization-patterns", "sql-queries", "sql-database-assistant", "sql-pro", "postgres", "postgres-pro", "analyzing-query-performance", "supabase-postgres-best-practices"], "kind": "specialised"}
+{"prompt": "write a sql query that returns the top 5 customers by revenue per month with window functions", "expect": ["sql-optimization-patterns", "sql-queries", "sql-database-assistant", "sql-pro", "postgres", "postgres-pro", "analyzing-query-performance", "supabase-postgres-best-practices"], "kind": "specialised"}
+{"prompt": "write a terraform module for an S3 bucket with versioning, encryption and lifecycle rules", "expect": ["terraform-patterns", "terraform-module-library", "terraform-engineer", "building-terraform-modules", "terraform-skill"], "kind": "specialised"}
+{"prompt": "create kubernetes deployment and service manifests for the api with readiness probes and resource limits", "expect": ["kubernetes", "k8s", "k8s-manifest-generator", "kubernetes-deployment", "creating-kubernetes-deployments", "kubernetes-specialist", "kubernetes-patterns", "operating-kubernetes"], "kind": "specialised"}
+{"prompt": "scaffold a helm chart for our node service with configurable replicas and ingress", "expect": ["helm-chart-builder", "helm-chart-scaffolding", "kubernetes", "k8s", "k8s-manifest-generator", "kubernetes-deployment", "creating-kubernetes-deployments", "kubernetes-specialist", "kubernetes-patterns", "operating-kubernetes"], "kind": "specialised"}
+{"prompt": "run an accessibility audit of the signup page against WCAG 2.2 AA", "expect": ["a11y", "a11y-audit", "accessibility", "accessibility-audit", "accessibility-compliance", "accessibility-testing", "wcag-audit-patterns", "web-accessibility-audit", "wcag", "wcag-accessibility", "fixing-accessibility", "accessibility-review", "a11y-check", "wcag22-a11y-audit"], "kind": "specialised"}
+{"prompt": "fix the accessibility issues on our navigation menu: keyboard focus, aria labels, screen reader support", "expect": ["a11y", "a11y-audit", "accessibility", "accessibility-audit", "accessibility-compliance", "accessibility-testing", "wcag-audit-patterns", "web-accessibility-audit", "wcag", "wcag-accessibility", "fixing-accessibility", "accessibility-review", "a11y-check", "wcag22-a11y-audit"], "kind": "specialised"}
+{"prompt": "do a technical SEO audit of the marketing site: meta tags, sitemap, canonical urls, structured data", "expect": ["seo", "seo-audit", "technical-seo-checker", "on-page-seo-checker", "seo-analysis", "seo-page", "seo-content-audit"], "kind": "specialised"}
+{"prompt": "integrate stripe checkout with monthly and yearly subscription plans and handle the webhooks", "expect": ["stripe-integration", "stripe-integration-expert", "stripe-best-practices", "stripe-billing-subscriptions", "stripe-payments"], "kind": "specialised"}
+{"prompt": "set up supabase row level security policies so users can only read their own rows", "expect": ["supabase-postgres-best-practices", "supabase-auth-storage-realtime-core", "supabase-skill", "supabase-js", "supabase-cli", "supabase-reference-architecture"], "kind": "specialised"}
+{"prompt": "write a multi-stage dockerfile for the node app that keeps the final image small", "expect": ["docker", "docker-development", "multi-stage-dockerfile", "writing-dockerfiles", "docker-patterns", "windsurf-dockerfile-generation"], "kind": "specialised"}
+{"prompt": "create a docker compose file with postgres, redis and the api service for local development", "expect": ["docker", "docker-compose-setup", "generating-docker-compose-files", "docker-development", "docker-patterns"], "kind": "specialised"}
+{"prompt": "set up a github actions workflow that runs lint, typecheck and tests on every pull request", "expect": ["github-actions-templates", "writing-github-actions", "ci-cd-pipeline-builder", "ci-cd-pipeline", "ci-cd", "ci-cd-and-automation", "windsurf-cicd-github-actions", "cicd"], "kind": "specialised"}
+{"prompt": "design the graphql schema for a blog with posts, authors, comments and pagination", "expect": ["graphql", "graphql-architect", "graphql-api-design", "graphql-patterns", "graphql-implementation", "building-graphql-server"], "kind": "specialised"}
+{"prompt": "generate an openapi spec for all the express routes in src/routes", "expect": ["openapi-spec-generation", "route-to-openapi", "openapi-first"], "kind": "specialised"}
+{"prompt": "set up a tailwind design system with our color tokens, typography scale and spacing", "expect": ["tailwind-design-system", "tailwind-css-patterns", "tailwind-v4", "tailwind-best-practices", "tailwind-theme-builder", "tailwind-v4-shadcn"], "kind": "specialised"}
+{"prompt": "structure a new react native app with navigation, state management and offline storage", "expect": ["react-native", "react-native-architecture", "react-native-expert", "react-native-best-practices", "vercel-react-native-skills", "react-native-skills"], "kind": "specialised"}
+{"prompt": "migrate these pages from the next.js pages router to the app router with server components", "expect": ["nextjs", "nextjs-app-router", "nextjs-app-router-patterns", "nextjs-developer", "nextjs-data-fetching", "nextjs-15-patterns"], "kind": "specialised"}
+{"prompt": "set up git worktrees so I can work on two feature branches in parallel", "expect": ["using-git-worktrees", "git-worktree", "git-worktree-manager", "worktree", "parallel-worktrees"], "kind": "specialised"}
+{"prompt": "implement the discount calculator using test driven development, write the failing tests first", "expect": ["test-driven-development", "tdd", "tdd-workflow", "tdd-guide", "test-driven-dev", "tdd-cycle", "red-green-refactor"], "kind": "specialised"}
+{"prompt": "let's brainstorm the design for a notifications feature before writing any code", "expect": ["brainstorming", "brainstorm", "project-brainstorming"], "kind": "specialised"}
+{"prompt": "write a detailed implementation plan for adding multi-tenant support, broken into small tasks", "expect": ["writing-plans", "implementation-planning", "plan", "implement-plan", "planning-with-files"], "kind": "specialised"}
+{"prompt": "create a new claude skill that teaches you our deployment checklist", "expect": ["skill-creator", "writing-skills", "skill-builder", "create-skill", "skill-authoring", "skill-authoring-workflow"], "kind": "specialised"}
+{"prompt": "design a distinctive landing page for a coffee roastery, avoid generic AI aesthetics", "expect": ["frontend-design", "anthropic-frontend-design", "landing-page", "landing-page-generator", "saas-landing"], "kind": "specialised"}
+{"prompt": "make some generative algorithmic art with p5.js, flow fields and particles", "expect": ["algorithmic-art", "canvas-generative"], "kind": "specialised"}
+{"prompt": "make an animated gif for slack of a dancing taco emoji", "expect": ["slack-gif-creator", "gif-generation"], "kind": "specialised"}
+{"prompt": "scrape product names and prices from this e-commerce site into a json file", "expect": ["web-scraping", "web-scraper", "scrapling", "universal-scraping-architect", "firecrawl-scrape"], "kind": "specialised"}
+{"prompt": "write a five email onboarding sequence for new trial users of our saas", "expect": ["email-sequence", "email-sequences", "email-marketing", "email-sequence-designer", "email-sequence-writer"], "kind": "specialised"}
+{"prompt": "draw a mermaid sequence diagram of the oauth login flow", "expect": ["mermaid-diagram", "mermaid-diagrams", "markdown-mermaid-writing", "architecture-diagram", "architecture-diagram-creator", "technical-diagrams", "create-diagram"], "kind": "specialised"}
+{"prompt": "do a security audit of the api against the OWASP top 10", "expect": ["security-audit", "security-review", "owasp-security", "checking-owasp-compliance", "security-reviewer", "dev-security-audit"], "kind": "specialised"}
+{"prompt": "our lighthouse score is 45, improve core web vitals especially LCP and CLS", "expect": ["core-web-vitals", "web-performance-optimization", "web-performance-audit", "performance", "performance-optimization", "nextjs-performance"], "kind": "specialised"}
+{"prompt": "do exploratory data analysis on this csv of customer churn with pandas and plot the distributions", "expect": ["exploratory-data-analysis", "data-analysis", "pandas-pro", "data-analyst", "csv-data-analyzer"], "kind": "specialised"}
+{"prompt": "write a database migration that splits the users table name column into first and last name without downtime", "expect": ["database-migration", "database-migrations-sql-migrations", "managing-database-migrations", "migration", "flyway-migrations"], "kind": "specialised"}
+{"prompt": "turn this feature spec into jira tickets with acceptance criteria and story points", "expect": ["jira", "jira-expert", "jira-workflow", "work-items-to-jira", "jira-automation"], "kind": "specialised"}
+{"prompt": "implement this figma design as react components, matching spacing and colors exactly", "expect": ["figma-implement-design", "figma-to-code", "figma-to-react", "figma-design-to-code", "figma-use"], "kind": "specialised"}
+{"prompt": "compile my latex paper and fix the bibliography errors", "expect": ["latex", "compile-latex", "latex-document-compiler", "latex-setup", "academic-writing-latex", "latex-authoring"], "kind": "specialised"}
+{"prompt": "tailor my resume to this senior backend engineer job posting", "expect": ["resume", "resume-tailor", "tailored-resume-generator", "resume-builder", "resume-cover-letter"], "kind": "specialised"}
+{"prompt": "scaffold a fastapi service with routers, pydantic models and async sqlalchemy", "expect": ["fastapi-expert", "fastapi-templates", "fastapi-app", "fastapi-router-py", "backend-fastapi-python"], "kind": "specialised"}
+{"prompt": "write an ansible playbook that installs nginx and deploys the app to three ubuntu servers", "expect": ["creating-ansible-playbooks"], "kind": "specialised"}
+{"prompt": "create an aws lambda function behind api gateway using the cdk in typescript", "expect": ["aws-cdk", "aws-cdk-development", "lambda", "aws-lambda-typescript-integration", "aws-lambda-python-integration", "aws-serverless-eda"], "kind": "specialised"}
+{"prompt": "add i18n localization to the react app with english, german and slovak translations", "expect": ["i18n-localization", "internationalization-i18n", "localization-toolkit", "software-localisation", "i18n-parity"], "kind": "specialised"}
+{"prompt": "write an architecture decision record for choosing postgres over mongodb", "expect": ["architecture-decision-records", "architecture-decision-record", "adr", "write-adr", "adr-writing", "recording-architecture-decisions"], "kind": "specialised"}
+{"prompt": "write a blameless postmortem for yesterday's outage of the payment service", "expect": ["postmortem", "incident-postmortem", "postmortem-writing", "write-a-postmortem", "post-mortem"], "kind": "specialised"}
+{"prompt": "the build keeps failing, can you figure out why", "expect": ["systematic-debugging", "debug", "debugging", "debugging-strategies", "debugging-and-error-recovery", "debugger"], "kind": "ambiguous"}
+{"prompt": "clean up this module, it has gotten really messy over time", "expect": ["refactor", "refactoring", "code-refactor", "safe-refactor", "refactor-safely", "refactoring-patterns"], "kind": "ambiguous"}
+{"prompt": "add authentication to the app", "expect": ["auth-implementation-patterns", "authentication-patterns", "auth-patterns", "better-auth", "nextjs-authentication", "building-api-authentication"], "kind": "ambiguous"}
+{"prompt": "make the dashboard page load faster", "expect": ["core-web-vitals", "web-performance-optimization", "web-performance-audit", "performance", "performance-optimization", "nextjs-performance"], "kind": "ambiguous"}
+{"prompt": "write tests for the date parsing utility", "expect": ["vitest", "vitest-testing", "javascript-typescript-jest", "jest-generator", "unit-test", "test-driven-development", "tdd", "tdd-workflow", "tdd-guide", "test-driven-dev", "tdd-cycle", "red-green-refactor"], "kind": "ambiguous"}
+{"prompt": "set up the database for this project", "expect": ["supabase-postgres-best-practices", "supabase-auth-storage-realtime-core", "supabase-skill", "supabase-js", "supabase-cli", "supabase-reference-architecture", "database-migration", "database-migrations-sql-migrations", "managing-database-migrations", "migration", "flyway-migrations", "sql-optimization-patterns", "sql-queries", "sql-database-assistant", "sql-pro", "postgres", "postgres-pro", "analyzing-query-performance"], "kind": "ambiguous"}
+{"prompt": "help me write docs for this library", "expect": ["generate-readme", "readme-generator", "create-readme", "crafting-effective-readmes", "update-readme", "readme-blueprint-generator"], "kind": "ambiguous"}
+{"prompt": "review my changes", "expect": ["requesting-code-review", "code-review", "code-reviewer", "code-review-checklist", "code-review-excellence"], "kind": "ambiguous"}
+{"prompt": "the api is slow under load, what should we cache and where", "expect": ["redis-patterns", "caching", "caching-patterns", "implementing-database-caching", "upstash-redis"], "kind": "ambiguous"}
+{"prompt": "add a websocket endpoint so the dashboard updates in real time", "expect": ["websocket-engineer", "websocket-implementation", "building-websocket-server", "websocket-patterns", "debugging-websocket-issues"], "kind": "ambiguous"}
+{"prompt": "render a rotating 3d model of our product on the homepage", "expect": ["threejs", "threejs-scene-setup", "three-best-practices", "threejs-materials-lighting", "threejs-gltf-loading", "threejs-r3f"], "kind": "ambiguous"}
+{"prompt": "our django admin is really slow when listing orders", "expect": ["django-expert", "django-patterns", "django-security", "django-perf-review", "sql-optimization-patterns", "sql-queries", "sql-database-assistant", "sql-pro", "postgres", "postgres-pro", "analyzing-query-performance", "supabase-postgres-best-practices"], "kind": "ambiguous"}
+{"prompt": "convert this async rust code to use tokio streams instead of channels", "expect": ["rust-async-patterns", "rust-engineer", "rust-best-practices"], "kind": "ambiguous"}
+{"prompt": "deploy this to the cloud", "expect": ["docker", "docker-development", "multi-stage-dockerfile", "writing-dockerfiles", "docker-patterns", "windsurf-dockerfile-generation", "kubernetes", "k8s", "k8s-manifest-generator", "kubernetes-deployment", "creating-kubernetes-deployments", "kubernetes-specialist", "kubernetes-patterns", "operating-kubernetes", "aws-cdk", "aws-cdk-development", "lambda", "aws-lambda-typescript-integration", "aws-lambda-python-integration", "aws-serverless-eda", "github-actions-templates", "writing-github-actions", "ci-cd-pipeline-builder", "ci-cd-pipeline", "ci-cd", "ci-cd-and-automation", "windsurf-cicd-github-actions", "cicd"], "kind": "ambiguous"}
+{"prompt": "prepare a presentation about our q3 results", "expect": ["pptx", "pptx-generator", "pptx-toolkit", "slides", "slide-deck", "slide-deck-generator", "md-slides", "frontend-slides"], "kind": "ambiguous"}
+{"prompt": "make our docs site match the brand colors and fonts from the guidelines", "expect": ["brand-guidelines", "brand-style-guide", "brand-identity"], "kind": "ambiguous"}
+{"prompt": "help me write a design doc for the new sync engine together, section by section", "expect": ["doc-coauthoring"], "kind": "ambiguous"}
+{"prompt": "the payment webhook sometimes fires twice", "expect": ["stripe-integration", "stripe-integration-expert", "stripe-best-practices", "stripe-billing-subscriptions", "stripe-payments", "systematic-debugging", "debug", "debugging", "debugging-strategies", "debugging-and-error-recovery", "debugger"], "kind": "ambiguous"}
+{"prompt": "we need an api for the mobile app", "expect": ["api-design", "api-design-principles", "rest-api-design", "rest-api-conventions", "openapi-spec-generation", "route-to-openapi", "openapi-first", "graphql", "graphql-architect", "graphql-api-design", "graphql-patterns", "graphql-implementation", "building-graphql-server"], "kind": "ambiguous"}
+{"prompt": "upgrade all our npm dependencies to the latest versions safely", "expect": ["dependency-upgrade", "dependency-audit", "dependency-auditor", "dependency-management-deps-audit", "upgrade"], "kind": "ambiguous"}
+{"prompt": "improve the prompt we send to the model for summarising tickets", "expect": ["prompt-engineering", "prompt-engineering-patterns", "prompt-engineer", "senior-prompt-engineer"], "kind": "ambiguous"}
+{"prompt": "write unit tests with vitest for the cart reducer", "expect": ["vitest", "vitest-testing", "javascript-typescript-jest", "jest-generator", "unit-test"], "kind": "ambiguous"}
+{"prompt": "put together a report of last month's metrics", "expect": ["xlsx", "xlsx-toolkit", "excel-generator", "spreadsheet", "spreadsheet-analysis", "add-excel", "large-excel-analysis-and-formatting", "exploratory-data-analysis", "data-analysis", "pandas-pro", "data-analyst", "csv-data-analyzer"], "kind": "ambiguous"}
+{"prompt": "explain how our ci pipeline works and speed it up", "expect": ["github-actions-templates", "writing-github-actions", "ci-cd-pipeline-builder", "ci-cd-pipeline", "ci-cd", "ci-cd-and-automation", "windsurf-cicd-github-actions", "cicd"], "kind": "ambiguous"}
+{"prompt": "draw the architecture of the system", "expect": ["mermaid-diagram", "mermaid-diagrams", "markdown-mermaid-writing", "architecture-diagram", "architecture-diagram-creator", "technical-diagrams", "create-diagram"], "kind": "ambiguous"}
+{"prompt": "the page is unusable with a screen reader", "expect": ["a11y", "a11y-audit", "accessibility", "accessibility-audit", "accessibility-compliance", "accessibility-testing", "wcag-audit-patterns", "web-accessibility-audit", "wcag", "wcag-accessibility", "fixing-accessibility", "accessibility-review", "a11y-check", "wcag22-a11y-audit"], "kind": "ambiguous"}
+{"prompt": "we are getting sql injection warnings from the scanner", "expect": ["security-audit", "security-review", "owasp-security", "checking-owasp-compliance", "security-reviewer", "dev-security-audit"], "kind": "ambiguous"}
+{"prompt": "make a readme for this repo", "expect": ["generate-readme", "readme-generator", "create-readme", "crafting-effective-readmes", "update-readme", "readme-blueprint-generator"], "kind": "ambiguous"}
+{"prompt": "set up e2e tests", "expect": ["webapp-testing", "playwright", "playwright-skill", "playwright-cli", "playwright-expert", "playwright-pro", "e2e-testing", "e2e-testing-patterns", "playwright-generate-test", "playwright-automation", "qa-testing-playwright"], "kind": "ambiguous"}
+{"prompt": "export the invoice as a pdf", "expect": ["pdf", "pdf-processing", "pdf-processing-pro", "pdf-processor", "pdf-toolkit", "pdf-extraction-guide", "pdf-analysis", "convert-pdf-to-md", "pdftk-server", "pdf-explore", "oma-pdf"], "kind": "ambiguous"}
+{"prompt": "fix the typo in the README install section", "expect": [], "kind": "silent"}
+{"prompt": "rename userId to accountId in the auth handler", "expect": [], "kind": "silent"}
+{"prompt": "why does this useEffect run twice in development", "expect": [], "kind": "silent"}
+{"prompt": "squash the last three commits into one", "expect": [], "kind": "silent"}
+{"prompt": "what does this regex match exactly", "expect": [], "kind": "silent"}
+{"prompt": "thanks, that works now", "expect": [], "kind": "silent"}
+{"prompt": "ok looks good, ship it", "expect": [], "kind": "silent"}
+{"prompt": "can you explain what this function returns when the list is empty", "expect": [], "kind": "silent"}
+{"prompt": "add a null check before accessing user.profile.email", "expect": [], "kind": "silent"}
+{"prompt": "bump the version in package.json to 1.4.2", "expect": [], "kind": "silent"}
+{"prompt": "move the helper functions from utils.ts into a new file called format.ts", "expect": [], "kind": "silent"}
+{"prompt": "change the button color from blue to green on the settings page", "expect": [], "kind": "silent"}
+{"prompt": "run the tests again", "expect": [], "kind": "silent"}
+{"prompt": "git push", "expect": [], "kind": "silent"}
+{"prompt": "what's the difference between let and const", "expect": [], "kind": "silent"}
+{"prompt": "remove the console.log statements from the checkout component", "expect": [], "kind": "silent"}
+{"prompt": "increase the timeout on the fetch call to 30 seconds", "expect": [], "kind": "silent"}
+{"prompt": "why is this variable undefined here", "expect": [], "kind": "silent"}
+{"prompt": "add a loading spinner while the data is fetching", "expect": [], "kind": "silent"}
+{"prompt": "undo the last change", "expect": [], "kind": "silent"}
+{"prompt": "make the header sticky on scroll", "expect": [], "kind": "silent"}
+{"prompt": "sort the list alphabetically before rendering it", "expect": [], "kind": "silent"}
+{"prompt": "what port is the dev server running on", "expect": [], "kind": "silent"}
+{"prompt": "convert this callback to async await", "expect": [], "kind": "silent"}
+{"prompt": "add a comment explaining why we retry three times", "expect": [], "kind": "silent"}
+{"prompt": "delete the unused imports in this file", "expect": [], "kind": "silent"}
+{"prompt": "the margin on mobile is too big, reduce it to 16px", "expect": [], "kind": "silent"}
+{"prompt": "rebase my branch on main and resolve the conflicts", "expect": [], "kind": "silent"}
+{"prompt": "hmm that didn't work, try the other approach", "expect": [], "kind": "silent"}
+{"prompt": "where is the config for the api base url", "expect": [], "kind": "silent"}
+{"prompt": "make this function return early if the input is empty", "expect": [], "kind": "silent"}
+{"prompt": "rename the component from UserCard to ProfileCard everywhere", "expect": [], "kind": "silent"}
+{"prompt": "add the missing semicolons", "expect": [], "kind": "silent"}
+{"prompt": "what does the --force flag do in this command", "expect": [], "kind": "silent"}
+{"prompt": "swap the order of the two columns in the table", "expect": [], "kind": "silent"}
+{"prompt": "add an index.ts that re-exports everything from the components folder", "expect": [], "kind": "silent"}
+{"prompt": "use optional chaining here instead of the nested ifs", "expect": [], "kind": "silent"}
+{"prompt": "change the default page size from 20 to 50", "expect": [], "kind": "silent"}
+{"prompt": "why am I getting cannot read properties of undefined reading map", "expect": [], "kind": "silent"}
+{"prompt": "add types to the props of the modal component", "expect": [], "kind": "silent"}
+{"prompt": "can you check if the env var is being read correctly", "expect": [], "kind": "silent"}
+{"prompt": "let's go with option two", "expect": [], "kind": "silent"}
+{"prompt": "update the copyright year in the footer to 2026", "expect": [], "kind": "silent"}
+{"prompt": "extract the magic number 86400 into a named constant", "expect": [], "kind": "silent"}
+{"prompt": "the text in the tooltip is cut off, fix it", "expect": [], "kind": "silent"}
+{"prompt": "write a short docstring for the parse function", "expect": [], "kind": "silent"}
+{"prompt": "show me the git log for the last week", "expect": [], "kind": "silent"}
+{"prompt": "stop, that's the wrong file, revert it", "expect": [], "kind": "silent"}
+{"prompt": "make the error message more friendly when login fails", "expect": [], "kind": "silent"}
+{"prompt": "add a unit to the duration label, it should say seconds", "expect": [], "kind": "silent"}
+{"prompt": "is it safe to delete the old migration folder", "expect": [], "kind": "silent"}
+{"prompt": "merge the feature branch into develop", "expect": [], "kind": "silent"}
+{"prompt": "the api returns 404 for /users/me, check the route definition", "expect": [], "kind": "silent"}
+{"prompt": "change the date format to dd.mm.yyyy", "expect": [], "kind": "silent"}
+{"prompt": "what node version does this project need", "expect": [], "kind": "silent"}
+{"prompt": "add a retry with exponential backoff to the fetch helper", "expect": [], "kind": "silent"}
+{"prompt": "good morning, let's continue where we left off yesterday", "expect": [], "kind": "silent"}
+{"prompt": "install lodash and use debounce on the search input", "expect": [], "kind": "silent"}
+{"prompt": "refactor this loop into a map call", "expect": [], "kind": "silent"}
+{"prompt": "the cancel button should close the dialog without saving", "expect": [], "kind": "silent"}
