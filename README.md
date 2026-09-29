@@ -127,6 +127,7 @@ autoskill prune [--days N] [--apply]
                                   remove installed skills unused for N days (default 30)
 autoskill eval <id...>            measure a skill: generated tasks with and without it, judged per check
 autoskill update                  download the latest catalog
+autoskill doctor                  check node, catalog, measurements, installed skills, permissions and hook speed
 autoskill crawl [--repos a/b,c/d] rebuild the catalog from GitHub
 ```
 
