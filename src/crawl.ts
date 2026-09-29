@@ -156,7 +156,8 @@ async function crawlRepo(fullName: string, known: RepoInfo | null, now: number, 
     const classification = classify(skillMd, files, texts);
     if (textFiles.length > Object.keys(texts).length) {
       classification.risk = 'review';
-      classification.reasons.push(`${textFiles.length - Object.keys(texts).length} text files not scanned`);
+      const missing = textFiles.length - Object.keys(texts).length;
+      classification.reasons.push(`${missing} text file${missing === 1 ? '' : 's'} not scanned`);
     }
 
     const license = fields.license || repo.license?.spdx_id || null;

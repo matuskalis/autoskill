@@ -153,7 +153,7 @@ test('a text file missing from the tarball marks the skill for review', async ()
   repos['acme/skills'] = repo('acme/skills', { 'doc/SKILL.md': skillMd('doc'), 'doc/ref.md': 'unseen' }, {}, ['doc/ref.md']);
   const [doc] = (await crawl({ repos: ['acme/skills'] })).skills;
   assert.equal(doc?.risk, 'review');
-  assert.deepEqual(doc?.riskReasons, ['1 text files not scanned']);
+  assert.deepEqual(doc?.riskReasons, ['1 text file not scanned']);
 });
 
 test('a SKILL.md missing from the tarball is logged as a failure', async () => {

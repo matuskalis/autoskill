@@ -81,3 +81,18 @@ test('the raw fallback retries a 5xx and gives up on a plain error', async () =>
   await assert.rejects(fileBytes('acme/skills', 'd'.repeat(40), 'a.md'), /HTTP 410/);
   assert.equal(again.urls.length, 2);
 });
+
+test('api: a permission 403 is not retried', async () => {
+  let calls = 0;
+  const original = globalThis.fetch;
+  globalThis.fetch = (async () => {
+    calls++;
+    return new Response('forbidden', { status: 403, headers: { 'x-ratelimit-remaining': '4999', 'x-ratelimit-reset': String(Math.floor(Date.now() / 1000) + 60) } });
+  }) as typeof fetch;
+  try {
+    await assert.rejects(api('/repos/a/b'), /HTTP 403/);
+  } finally {
+    globalThis.fetch = original;
+  }
+  assert.equal(calls, 1);
+});

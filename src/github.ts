@@ -23,7 +23,8 @@ export async function api<T>(path: string): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     const response = await fetch(`https://api.github.com${path}`, { headers, signal: AbortSignal.timeout(30_000) });
     if (response.ok) return (await response.json()) as T;
-    const limited = response.status === 403 || response.status === 429;
+    // A 403 is a rate limit only when GitHub says so; otherwise it is a permission error and retrying wastes minutes.
+    const limited = response.status === 429 || (response.status === 403 && (response.headers.get('x-ratelimit-remaining') === '0' || response.headers.has('retry-after')));
     if (limited && attempt < 3) {
       const reset = Number(response.headers.get('x-ratelimit-reset')) * 1000;
       const retryAfter = Number(response.headers.get('retry-after')) * 1000;
