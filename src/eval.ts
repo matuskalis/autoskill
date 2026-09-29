@@ -418,7 +418,10 @@ export async function evaluate(
     const raw = await pluginEval(pluginDir, args.slice(3), join(work, 'result.json'), options);
     if (options.keepRaw) {
       mkdirSync(options.keepRaw, { recursive: true });
-      writeFileSync(join(options.keepRaw, `${skill.id.replace(/[^\w.-]+/g, '_')}-${skill.sha.slice(0, 7)}.json`), raw);
+      // Mode and time in the name: repeated runs of one skill are pooled later, not overwritten.
+      const mode = options.workspace ? 'workspace' : options.headroom ? 'headroom' : options.grounded ? 'grounded' : options.hard ? 'hard' : 'text';
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      writeFileSync(join(options.keepRaw, `${skill.id.replace(/[^\w.-]+/g, '_')}-${skill.sha.slice(0, 7)}-${mode}-${stamp}.json`), raw);
     }
     const summary = summarize(JSON.parse(raw) as EvalResult);
     const costUsd = Math.round((summary.costUsd + pilotCost) * 1000) / 1000;
