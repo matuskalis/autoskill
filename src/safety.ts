@@ -44,6 +44,21 @@ const COMMAND =
 const PERMISSIONS =
   /settings(\.local)?\.json|bypass-?permissions|dangerously|allowed-?tools|allowedTools|defaultMode|permissionMode|\bpermissions\s*[:.{"']|\.claude\/|~\/\.claude\b|CLAUDE_CONFIG_DIR/i;
 
+/**
+ * Other ways prose can make Claude act or persist: tools that reach outside
+ * the conversation, files Claude Code or git execute later, instructions
+ * loaded from a URL at run time, data smuggled into a URL, and encoded blobs.
+ */
+const REACH = [
+  { pattern: /\bmcp__\w+|\bMCP\s+(server|tool)s?\b/i, reason: 'uses MCP tools' },
+  { pattern: /\.git\/hooks|\bgit\s+hooks?\b|\bhusky\b|\bpre-commit\s+hook\b/i, reason: 'touches git hooks' },
+  { pattern: /\b(CLAUDE|AGENTS)(\.local)?\.md\b|\bmemory\s+(file|tool|directory)\b/i, reason: 'writes to Claude memory or project instructions' },
+  { pattern: /LaunchAgents|LaunchDaemons|\bsystemd\b|\bautostart\b|\bstartup\s+(folder|items?)\b|\/etc\//i, reason: 'touches startup or system locations' },
+  { pattern: /\b(fetch|download|visit|open|read|load|retrieve|pull|follow)\b[^.\n]{0,80}https?:\/\//i, reason: 'points Claude at a remote URL for instructions or files' },
+  { pattern: /https?:\/\/[^\s)>\]]*[?&][^\s)>\]]*(\{|\$\{|<[A-Za-z_]+>|%s)/, reason: 'builds a URL from data' },
+  { pattern: /[A-Za-z0-9+/]{120,}={0,2}|\b[0-9a-f]{120,}\b/i, reason: 'contains an encoded blob' },
+] as const;
+
 /** Fullwidth letters and zero-width characters would slip past every pattern above. */
 function fold(text: string): string {
   return text.normalize('NFKC').replace(/[\u200b-\u200f\u2060-\u2064\ufeff\u00ad]/g, '');
@@ -82,6 +97,7 @@ export function classify(skillMd: string, files: readonly SkillFile[], texts: Re
     else if (FENCE.test(text) || INDENTED_CODE.test(text)) reasons.push(`${path} has code blocks`);
     else if (COMMAND.test(text)) reasons.push(`${path} names shell or network commands`);
     else if (PERMISSIONS.test(text)) reasons.push(`${path} talks about Claude Code settings or permissions`);
+    else if (REACH.some(({ pattern }) => pattern.test(text))) reasons.push(`${path} ${REACH.find(({ pattern }) => pattern.test(text))?.reason}`);
     // Legal prose says "execute"; only a root license is spared this one check.
     else if (!ROOT_LICENSE.test(path) && RUN_PHRASE.test(text)) reasons.push(`${path} tells the model to run something`);
   }
