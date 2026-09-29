@@ -76,9 +76,42 @@ It is a static score, computed without running the skill. The measured results b
 
 The hook uses a measurement only when it is for the exact commit in the catalog, the skill loaded in at least half the runs, the run was not cut short by the cost ceiling, and the model scored under 0.9 without the skill. A skill measured as harmful (delta ≤ -0.05) is never suggested. Skills whose frontmatter pre-approves tools, registers hooks or runs shell on load are never evaluated, because loading them would act on the machine running the eval.
 
-**First results (29 Sep 2026, 22 popular skills, Opus 5.5):** on almost every skill the model already scored 0.9 or more without it, so there was nothing left to gain. The largest raw gain was +0.11 (a Postgres skill that loaded in only a third of runs); several skills made answers slightly worse, the clearest being a Core Web Vitals skill at -0.11. This matches the literature collected in `docs/research-skill-uplift.md`: on frontier models most public skills add nothing on questions a model can answer from general knowledge, and the gains that remain come from specific procedures, checklists and tool workflows.
+**First results (29 Sep 2026, 23 popular skills, 30 runs, Opus 5.5):** on almost every skill the model already scored 0.9 or more without it, so there was nothing left to gain. The largest raw gain was +0.11 (a Postgres skill that loaded in only a third of runs); several skills made answers slightly worse, the clearest being a Core Web Vitals skill at -0.11. Tasks generated to be harder did not escape the ceiling either. This matches the literature collected in `docs/research-skill-uplift.md`: on frontier models most public skills add nothing on questions a model can answer from general knowledge, and the gains that remain come from specific procedures, checklists and tool workflows.
 
-MEASURED_TABLE
+| skill | tasks | without | with | delta | focused delta (checks) | fired | note |
+|---|---|---|---|---|---|---|---|
+| [supabase-postgres-best-practices](https://github.com/sickn33/agentic-awesome-skills/tree/3717f2667cc6c8544c54f46b040ef538c6f6f229/plugins/agentic-awesome-skills-claude/skills/supabase-postgres-best-practices) | text | 0.86 | 0.97 | +0.11 | +0.67 (3) | 33% | rarely loaded |
+| [thread-abort-migration](https://github.com/dotnet/skills/tree/8599a06757aabf411ae28e0559063342d70386ef/plugins/dotnet-upgrade/skills/thread-abort-migration) | workspace | 0.93 | 1.00 | +0.07 | +1.00 (1) | 100% | ceiling |
+| [email-deliverability](https://github.com/rampstackco/claude-skills/tree/3d4510a94a76ead80122c691b5c480f92f3fbe40/skills/email-deliverability) | text | 0.93 | 1.00 | +0.07 | +1.00 (1) | 100% | ceiling |
+| [senior-prompt-engineer](https://github.com/alirezarezvani/claude-skills/tree/19392f7a08264ed00486a251f5b2098321771f94/engineering-team/skills/senior-prompt-engineer) | text | 0.97 | 1.00 | +0.03 | +0.50 (1) | 0% | ceiling, rarely loaded |
+| [k8s-manifest-generator](https://github.com/wshobson/agents/tree/9b15b34b0bfc13a815cbfc2366e14ea549e09422/plugins/kubernetes-operations/skills/k8s-manifest-generator) | text | 0.97 | 1.00 | +0.03 | +0.50 (1) | 100% | ceiling |
+| [database-migration](https://github.com/wshobson/agents/tree/9b15b34b0bfc13a815cbfc2366e14ea549e09422/plugins/framework-migration/skills/database-migration) | text | 0.92 | 0.94 | +0.03 | +0.25 (2) | 0% | ceiling, rarely loaded |
+| [financial-modeling](https://github.com/seb1n/awesome-ai-agent-skills/tree/75865a5d037a4cdaa7f409a4ec14ab9b0292920b/finance-and-accounting/financial-modeling) | text | 0.97 | 1.00 | +0.03 | +0.50 (1) | 67% | ceiling |
+| [test-driven-development](https://github.com/obra/superpowers/tree/8ca22dba9a94f28898bbce59f2537ff4d87c747d/skills/test-driven-development) | text | 0.93 | 0.94 | +0.01 | +0.00 (3) | 83% | ceiling |
+| [email-deliverability](https://github.com/rampstackco/claude-skills/tree/3d4510a94a76ead80122c691b5c480f92f3fbe40/skills/email-deliverability) | hard | 0.97 | 0.97 | +0.00 | +0.00 (1) | 100% | ceiling |
+| [financial-modeling](https://github.com/seb1n/awesome-ai-agent-skills/tree/75865a5d037a4cdaa7f409a4ec14ab9b0292920b/finance-and-accounting/financial-modeling) | hard | 1.00 | 1.00 | +0.00 | +0.00 (0) | 0% | ceiling, rarely loaded |
+| [k8s-manifest-generator](https://github.com/wshobson/agents/tree/9b15b34b0bfc13a815cbfc2366e14ea549e09422/plugins/kubernetes-operations/skills/k8s-manifest-generator) | hard | 1.00 | 1.00 | +0.00 | +0.00 (0) | 100% | ceiling |
+| [terraform-engineer](https://github.com/Jeffallan/claude-skills/tree/882ef55e377dbf9a4dbe496bb41ac6ccd0e555cf/skills/terraform-engineer) | hard | 1.00 | 1.00 | +0.00 | +0.00 (0) | 50% | ceiling |
+| [stripe-integration](https://github.com/wshobson/agents/tree/9b15b34b0bfc13a815cbfc2366e14ea549e09422/plugins/payment-processing/skills/stripe-integration) | hard | 0.88 | 0.88 | +0.00 | +0.00 (2) | 0% | rarely loaded |
+| [react-native-skills](https://github.com/fcakyon/claude-codex-settings/tree/8c25677efb55b473f7b0bbbb3658273ebc8eb993/plugins/react-skills/skills/react-native-skills) | text | 0.91 | 0.91 | +0.00 | +0.00 (3) | 100% | ceiling |
+| [rest-api-design](https://github.com/secondsky/claude-skills/tree/88378361314f558fb719aec0af9fd898ab36f0b2/plugins/rest-api-design/skills/rest-api-design) | text | 1.00 | 1.00 | +0.00 | +0.00 (0) | 83% | ceiling |
+| [systematic-debugging](https://github.com/obra/superpowers/tree/8ca22dba9a94f28898bbce59f2537ff4d87c747d/skills/systematic-debugging) | text | 0.83 | 0.83 | +0.00 | +0.00 (3) | 0% | rarely loaded |
+| [security-checklist](https://github.com/jamditis/claude-skills-journalism/tree/8a047d85f3056e6e45e13eefa275570f2fa7918e/security-toolkit/skills/security-checklist) | text | 1.00 | 1.00 | +0.00 | +0.00 (0) | 83% | ceiling |
+| [release-notes](https://github.com/phuryn/pm-skills/tree/8607e3b077817f89bf4a9b623246219734ac3be0/pm-execution/skills/release-notes) | text | 0.94 | 0.94 | +0.00 | +0.00 (2) | 100% | ceiling |
+| [docker-development](https://github.com/alirezarezvani/claude-skills/tree/19392f7a08264ed00486a251f5b2098321771f94/engineering/docker-development/skills/docker-development) | text | 0.97 | 0.97 | +0.00 | +0.00 (1) | 67% | ceiling |
+| [python-packaging](https://github.com/wshobson/agents/tree/9b15b34b0bfc13a815cbfc2366e14ea549e09422/plugins/python-development/skills/python-packaging) | text | 1.00 | 1.00 | +0.00 | +0.00 (0) | 33% | ceiling, rarely loaded |
+| [saas-economics-efficiency-metrics](https://github.com/deanpeters/Product-Manager-Skills/tree/1b5a524ebb95e9497fa3f25002d8b8ec528d4444/skills/saas-economics-efficiency-metrics) | text | 0.93 | 0.93 | +0.00 | +0.00 (2) | 100% | ceiling |
+| [tailwind-design-system](https://github.com/wshobson/agents/tree/9b15b34b0bfc13a815cbfc2366e14ea549e09422/plugins/frontend-mobile-development/skills/tailwind-design-system) | text | 1.00 | 1.00 | +0.00 | +0.00 (0) | 67% | ceiling |
+| [openapi-spec-generation](https://github.com/sickn33/agentic-awesome-skills/tree/3717f2667cc6c8544c54f46b040ef538c6f6f229/plugins/agentic-bundle-aas-api-platform-builder/skills/openapi-spec-generation) | text | 1.00 | 1.00 | +0.00 | +0.00 (0) | 33% | ceiling, rarely loaded |
+| [gitlab-ci-patterns](https://github.com/wshobson/agents/tree/9b15b34b0bfc13a815cbfc2366e14ea549e09422/plugins/cicd-automation/skills/gitlab-ci-patterns) | text | 1.00 | 1.00 | +0.00 | +0.00 (0) | 33% | ceiling, rarely loaded |
+| [core-web-vitals](https://github.com/addyosmani/web-quality-skills/tree/afa8da942115f2961fdbfa80807ea0b232ff6c00/skills/core-web-vitals) | hard | 1.00 | 0.97 | -0.03 | -0.50 (1) | 67% | ceiling |
+| [terraform-engineer](https://github.com/Jeffallan/claude-skills/tree/882ef55e377dbf9a4dbe496bb41ac6ccd0e555cf/skills/terraform-engineer) | text | 1.00 | 0.97 | -0.03 | -0.50 (1) | 67% | ceiling |
+| [stripe-integration](https://github.com/wshobson/agents/tree/9b15b34b0bfc13a815cbfc2366e14ea549e09422/plugins/payment-processing/skills/stripe-integration) | text | 0.93 | 0.90 | -0.03 | -0.25 (2) | 100% | ceiling |
+| [wcag-audit-patterns](https://github.com/wshobson/agents/tree/9b15b34b0bfc13a815cbfc2366e14ea549e09422/plugins/accessibility-compliance/skills/wcag-audit-patterns) | text | 0.97 | 0.93 | -0.03 | -0.50 (1) | 50% | ceiling |
+| [internal-comms](https://github.com/anthropics/skills/tree/33375500bcea98d610eb30ce10ac4e59b89c390d/skills/internal-comms) | text | 0.90 | 0.83 | -0.07 | -0.33 (3) | 100% | ceiling |
+| [core-web-vitals](https://github.com/addyosmani/web-quality-skills/tree/afa8da942115f2961fdbfa80807ea0b232ff6c00/skills/core-web-vitals) | text | 0.97 | 0.86 | -0.11 | -0.67 (3) | 100% | ceiling |
+
+"text" tasks are answered in one reply; "hard" tasks were generated to sit at the edge of the model's ability; "workspace" tasks edit seeded files. Each row is 3 tasks x 2 runs per arm; deltas under about 0.1 are within judge noise. Raw results: `catalog/measured.json`.
 
 ## Commands
 
