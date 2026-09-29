@@ -25,7 +25,9 @@ export function parseFrontmatter(text: string): Frontmatter {
   if (end === -1) return { fields: {}, body: normalized, malformed: false };
 
   const fields: Record<string, string> = Object.create(null) as Record<string, string>;
-  let malformed = false;
+  // Claude Code closes frontmatter at the first `---` anywhere, even mid-line; a line that contains one
+  // means Claude Code and this parser disagree on where the body starts.
+  let malformed = lines.slice(1, end).some((line) => line.includes('---'));
   let key: string | null = null;
   let block: '>' | '|' | null = null;
   let parts: string[] = [];

@@ -90,6 +90,7 @@ export function classify(skillMd: string, files: readonly SkillFile[], texts: Re
     if (Object.keys(other.fields).length || other.malformed) reasons.push(`${path} has frontmatter`);
   }
 
+  if (DYNAMIC_CONTEXT.test(fold(skillMd)) && !DYNAMIC_CONTEXT.test(fold(body))) reasons.push('frontmatter contains shell on load (!`…`)');
   const documents = { 'SKILL.md': body, ...texts };
   for (const [path, raw] of Object.entries(documents)) {
     // Line-wrapped base64 (76 or 64 characters a line) is joined so the blob check sees it whole.
@@ -118,6 +119,7 @@ export function loadTimeRisks(skillMd: string): string[] {
   const { fields, body, malformed } = parseFrontmatter(skillMd);
   const risks = Object.keys(fields).filter((key) => LOAD_TIME_KEYS.includes(key)).map((key) => `frontmatter sets ${key}`);
   if (malformed) risks.push('frontmatter uses YAML this checker cannot read');
-  if (DYNAMIC_CONTEXT.test(fold(body))) risks.push('runs shell on load (!`…`)');
+  // The whole file, not just the body: parsers disagree on where frontmatter ends.
+  if (DYNAMIC_CONTEXT.test(fold(skillMd))) risks.push('runs shell on load (!`…`)');
   return risks;
 }

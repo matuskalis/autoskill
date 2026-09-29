@@ -97,6 +97,7 @@ export interface Hit<T extends Searchable = Searchable> {
 const COPY_SCORE_SHARE = 0.6;
 /** A name published by many repos is the canonical one for its task; each e-fold of repos adds 20%. */
 const COPY_BONUS = 0.2;
+const MAX_COPY_OWNERS = 5;
 
 /**
  * Forks and mirrors publish the same skill under many paths. Show each name
@@ -112,11 +113,11 @@ function collapseCopies<T extends Searchable>(hits: Hit<T>[]): Hit<T>[] {
   return [...groups.values()]
     .map((copies) => {
       const best = Math.max(...copies.map((hit) => hit.score));
-      const pick = copies
-        .filter((hit) => hit.score >= best * COPY_SCORE_SHARE)
-        .sort((a, b) => b.skill.quality - a.skill.quality || b.score - a.score)[0] as Hit<T>;
-      const repos = new Set(copies.map((hit) => hit.skill.id.split(':')[0])).size;
-      return { ...pick, score: best * (1 + COPY_BONUS * Math.log(repos)) };
+      const close = copies.filter((hit) => hit.score >= best * COPY_SCORE_SHARE);
+      const pick = [...close].sort((a, b) => b.skill.quality - a.skill.quality || b.score - a.score)[0] as Hit<T>;
+      // Distinct owners, not repos, and capped: one account publishing many copies must not buy rank.
+      const owners = new Set(close.map((hit) => hit.skill.id.split('/')[0]?.toLowerCase())).size;
+      return { ...pick, score: best * (1 + COPY_BONUS * Math.log(Math.min(owners, MAX_COPY_OWNERS))) };
     })
     .sort((a, b) => b.score - a.score);
 }

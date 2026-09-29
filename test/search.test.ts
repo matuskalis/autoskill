@@ -103,3 +103,13 @@ test('a measurement is ignored for another commit, a skill that never loaded, or
   assert.equal(names(harmful({ partial: true })).includes('pdf'), true);
   assert.equal(names(harmful({ ceiling: true })).includes('pdf'), true);
 });
+
+test('copy bonus counts distinct owners and is capped', () => {
+  const copies = Array.from({ length: 20 }, (_, i) => skill('gamed', 'Deploy containers to a cluster with rolling updates.', { id: `sameowner/repo${i}:skills/gamed`, repo: `sameowner/repo${i}`, hash: `h${i}` }));
+  const honest = skill('deploy-cluster', 'Deploy containers to a cluster with rolling updates.', { id: 'other/x:skills/deploy-cluster' });
+  const hits = new Index([...copies, honest, ...catalog.skills]).search('deploy containers to a cluster with rolling updates');
+  const gamed = hits.find((h) => h.skill.name === 'gamed');
+  const fair = hits.find((h) => h.skill.name === 'deploy-cluster');
+  assert.ok(gamed && fair);
+  assert.ok(gamed.score / fair.score < 1.05, `one owner with 20 repos got ${(gamed.score / fair.score).toFixed(2)}x`);
+});

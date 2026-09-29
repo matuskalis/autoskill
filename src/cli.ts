@@ -133,6 +133,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       const out = flag(args, '--out') ?? 'catalog/measured.json';
       const measured = existsSync(out) ? (JSON.parse(readFileSync(out, 'utf8')) as Record<string, Measurement>) : {};
       const workspace = args.includes('--workspace');
+      if (workspace && args.includes('--hard')) throw new Error('--hard has no workspace variant yet; run them separately');
       for (const id of positional(args)) {
         const skill = findSkill(catalog, id);
         if (!skill) throw new Error(`${id} is not in the catalog`);

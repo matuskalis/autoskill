@@ -168,3 +168,13 @@ test('stripToInstructions keeps SKILL.md and text references, drops plugin parts
   const left = (readdirSync(dir, { recursive: true, encoding: 'utf8' }) as string[]).filter((p) => !existsSync(join(dir, p)) || !statSync(join(dir, p)).isDirectory()).sort();
   assert.deepEqual(left, ['LICENSE.txt', 'SKILL.md', 'notes.txt', 'reference/guide.md']);
 });
+
+test('stripToInstructions folds case and removes shipped eval suites', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'autoskill-strip-'));
+  for (const path of ['SKILL.md', 'Commands/go.md', 'Agents/a.md', 'Skills/x/skill.md', 'evals/pwn/prompt.md', 'autoskill-text-evals/x/prompt.md']) {
+    mkdirSync(join(dir, path, '..'), { recursive: true });
+    writeFileSync(join(dir, path), 'x');
+  }
+  stripToInstructions(dir);
+  assert.deepEqual(readdirSync(dir), ['SKILL.md']);
+});

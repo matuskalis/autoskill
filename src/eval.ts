@@ -66,6 +66,8 @@ const SEEDS_MAX = 5;
 const SEED_BYTES_MAX = 6000;
 /** Eval dir for workspace cases: never one the staged skill ships, since `--scaffold` runs every case's script. */
 export const WORKSPACE_EVAL_DIR = 'autoskill-evals';
+/** Text cases get their own directory too, so nothing the skill ships under evals/ runs with them. */
+export const TEXT_EVAL_DIR = 'autoskill-text-evals';
 const WORKSPACE_TOOLS = ['Read', 'Glob', 'Grep', 'Skill', 'Write', 'Edit'];
 /** Files Claude Code or git would act on by themselves: a seeded hook or fsmonitor would run code. */
 const RESERVED_DIRS = new Set(['.claude', '.git']);
@@ -87,7 +89,8 @@ export function stripToInstructions(dir: string, root = dir) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const path = join(dir, entry.name);
     const topLevel = dir === root;
-    const pluginPart = topLevel && (PLUGIN_PARTS.has(entry.name) || entry.name.startsWith('.'));
+    // APFS and NTFS fold case: Commands/ is commands/ to a loader.
+    const pluginPart = topLevel && (PLUGIN_PARTS.has(entry.name.toLowerCase()) || entry.name.startsWith('.'));
     if (entry.isDirectory() && !pluginPart) stripToInstructions(path, root);
     else if (pluginPart || entry.isSymbolicLink() || !(entry.isFile() && (entry.name === 'SKILL.md' || isTextFile(entry.name)))) {
       rmSync(path, { recursive: true, force: true });
@@ -95,7 +98,7 @@ export function stripToInstructions(dir: string, root = dir) {
   }
 }
 
-const PLUGIN_PARTS = new Set(['hooks', 'agents', 'commands', 'output-styles', 'skills', 'bin', 'monitors', 'settings.json', 'CLAUDE.md']);
+const PLUGIN_PARTS = new Set(['hooks', 'agents', 'commands', 'output-styles', 'skills', 'bin', 'monitors', 'settings.json', 'claude.md', 'evals', TEXT_EVAL_DIR, WORKSPACE_EVAL_DIR]);
 
 export function generationPrompt(skill: Pick<CatalogSkill, 'name' | 'description'>, hard = false): string {
   return [
@@ -333,8 +336,10 @@ export async function evaluate(
       args.push('--eval-dir', WORKSPACE_EVAL_DIR, '--scaffold', '--allow-tools', 'Write', 'Edit');
     } else {
       const cases = parseCases(await claudeText(generationPrompt(skill, options.hard), options.model));
-      for (const item of cases) writeCase(join(pluginDir, 'evals'), item, options.runs);
+      if (existsSync(join(pluginDir, TEXT_EVAL_DIR))) throw new Error(`${skill.id} ships its own ${TEXT_EVAL_DIR}/`);
+      for (const item of cases) writeCase(join(pluginDir, TEXT_EVAL_DIR), item, options.runs);
       options.log(`generated ${cases.length} cases, ${cases.reduce((n, c) => n + c.checks.length, 0)} checks`);
+      args.push('--eval-dir', TEXT_EVAL_DIR);
     }
 
     const out = join(work, 'result.json');
