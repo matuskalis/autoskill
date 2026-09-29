@@ -1,6 +1,8 @@
 # autoskill
 
-Claude Code gets better with the right skill, and there are tens of thousands of them on GitHub. Nobody installs the right one at the right moment. autoskill does it for you: on every prompt it looks through a rated catalog of public skills, and when one clearly fits the task, Claude installs it, pinned to a commit (safe skills directly, others after asking you), and uses it straight away. `autoskill prune` removes the ones you stopped using.
+**Only 9.6% of the 22,746 public Claude Code skills on GitHub are plain instructions.** The rest can run commands, ship scripts or pre-approve tools. We scanned them all and read every red flag by hand: [the audit](docs/audit-2026-09.md).
+
+autoskill is the catalog that came out of it, rebuilt every day. On every prompt it looks for a skill that clearly fits the task. When it finds one, Claude installs it, pinned to a commit and scanned again on your machine: instruction-only skills directly, anything that can run code only after you say yes. It also suggests changes to how you work with Claude Code, from your own local data (`autoskill advise`), and `autoskill prune` removes the skills you stopped using.
 
 ```
 you:     fill in this PDF form and merge it with the cover letter
