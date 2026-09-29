@@ -16,7 +16,8 @@
   "scripts": {
     "test": "node --test test/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "crawl": "node src/cli.ts crawl --out catalog"
+    "crawl": "node src/cli.ts crawl --out catalog",
+    "bench": "node scripts/bench-hook.ts --check"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

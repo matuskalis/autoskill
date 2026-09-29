@@ -22,6 +22,8 @@ jobs:
         env:
           # A fine-grained read-only token raises the limit from 1000 to 5000 calls an hour; optional.
           GITHUB_TOKEN: ${{ secrets.CRAWL_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: Check matching quality on the new catalog
+        run: node scripts/bench-hook.ts --check
       - name: Commit if it changed
         run: |
           git add catalog/catalog.json catalog/index.json
