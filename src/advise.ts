@@ -72,26 +72,6 @@ export function maxEffort(stats: TranscriptStats): Advice | null {
   };
 }
 
-interface Settings {
-  effortLevel?: unknown;
-  modelSettings?: Record<string, { effortLevel?: unknown }>;
-}
-
-export function missingModelEffort(stats: TranscriptStats, settings: Settings): Advice | null {
-  const covered = new Set(Object.keys(settings.modelSettings ?? {}));
-  const used = [...stats.models].filter(([model, turns]) => /-5-5$/.test(model) && turns >= 20 && !covered.has(model));
-  if (!used.length) return null;
-  const [model, turns] = used.sort((a, b) => b[1] - a[1])[0] as [string, number];
-  const topLevel = typeof settings.effortLevel === 'string' ? ` Your top-level effortLevel is ${settings.effortLevel}.` : '';
-  return {
-    id: `effort-unset-${model}`,
-    title: `No effort setting for ${model}, which you use`,
-    evidence: `${turns} turns ran on ${model} in the last ${WINDOW_DAYS} days, and settings.json has no modelSettings entry for it.${topLevel}`,
-    fix: `Check the level a session really runs at with /effort. To pin it, add "${model}": { "effortLevel": "<level>" } under modelSettings in ~/.claude/settings.json.`,
-    source: 'Claude Code model config: 5.5 models default to medium; the top-level effortLevel key is reported not to apply to them (anthropics/claude-code#97403, open).',
-  };
-}
-
 export function longClaudeMd(files: readonly string[]): Advice | null {
   const long = files
     .filter((file) => existsSync(file))
@@ -127,20 +107,11 @@ export function unusedSkills(usage: Map<string, { last: string }>, now = Date.no
   };
 }
 
-function readSettings(): Settings {
-  try {
-    return JSON.parse(readFileSync(join(claudeDir(), 'settings.json'), 'utf8')) as Settings;
-  } catch {
-    return {};
-  }
-}
-
 export async function computeAdvice(): Promise<Advice[]> {
   const stats = await transcriptStats();
   const claudeMds = [join(claudeDir(), 'CLAUDE.md'), ...[...stats.cwds].flatMap((cwd) => [join(cwd, 'CLAUDE.md'), join(cwd, '.claude', 'CLAUDE.md')])];
   return [
     maxEffort(stats),
-    missingModelEffort(stats, readSettings()),
     longClaudeMd([...new Set(claudeMds)]),
     unusedSkills(await skillUsage(UNUSED_DAYS + 1)),
   ].filter((advice): advice is Advice => advice !== null);

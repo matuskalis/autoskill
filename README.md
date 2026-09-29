@@ -131,7 +131,6 @@ The hook uses a measurement only when it is for the exact commit in the catalog,
 | check | fires when | suggests |
 |---|---|---|
 | max effort | 20% or more of your turns in the last 14 days (and at least 50) ran at `max` | a lower default per model, `max` only where it measurably helps |
-| effort not pinned | a 5.5 model you use has no `modelSettings` entry | check with `/effort`, then pin the level for that model |
 | long CLAUDE.md | a CLAUDE.md you work with is over 200 lines | trim to lines that prevent mistakes; move procedures to skills |
 | idle skills | a skill in `~/.claude/skills` was not used or edited for 60 days | remove it: every skill's description costs context in each session |
 
