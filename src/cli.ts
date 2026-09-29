@@ -162,7 +162,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       const out = flag(args, '--out') ?? 'catalog/measured.json';
       const measured = existsSync(out) ? (JSON.parse(readFileSync(out, 'utf8')) as Record<string, Measurement>) : {};
       const workspace = args.includes('--workspace');
-      if (workspace && args.includes('--hard')) throw new Error('--hard has no workspace variant yet; run them separately');
+      if (workspace && (args.includes('--hard') || args.includes('--headroom'))) throw new Error('--hard and --headroom have no workspace variant yet; run them separately');
       for (const id of positional(args)) {
         const skill = findSkill(catalog, id);
         if (!skill) throw new Error(`${id} is not in the catalog`);
@@ -178,6 +178,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
             keepRaw: join(stateDir(), 'evals'),
             hard: args.includes('--hard'),
             grounded: args.includes('--grounded'),
+            headroom: args.includes('--headroom'),
             log: (line) => console.error(`  ${line}`),
           });
         } catch (error) {
@@ -187,7 +188,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
           continue;
         }
         // Workspace results live beside text results; the hook reads only the text key for now.
-        const suffix = result.mode === 'workspace' ? '#workspace' : args.includes('--grounded') ? '#grounded' : args.includes('--hard') ? '#hard' : '';
+        const suffix = result.mode === 'workspace' ? '#workspace' : args.includes('--headroom') ? '#headroom' : args.includes('--grounded') ? '#grounded' : args.includes('--hard') ? '#hard' : '';
         measured[`${skill.id}${suffix}`] = result;
         writeFileSync(out, JSON.stringify(measured, null, 1) + '\n');
         const sign = result.delta >= 0 ? '+' : '';

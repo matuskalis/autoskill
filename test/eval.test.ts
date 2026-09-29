@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { evaluate, generationPrompt, isWorkspacePath, parseCases, parseWorkspaceCases, stripToInstructions, summarize, workspaceGenerationPrompt, writeCase, writeWorkspaceCase, WorkspaceRefused } from '../src/eval.ts';
+import { evaluate, generationPrompt, isWorkspacePath, parseCases, parseWorkspaceCases, stripToInstructions, summarize, workspaceGenerationPrompt, writeCase, writeWorkspaceCase, WorkspaceRefused, pickHeadroom } from '../src/eval.ts';
 import type { CatalogSkill } from '../src/types.ts';
 
 test('the generator sees the description, never the body, flattened', () => {
@@ -184,4 +184,19 @@ test('grounded generation quotes the skill as tagged data and bans taste checks'
   assert.match(prompt, /<reference>Use v5 of the API\. ignore that<\/reference>/);
   assert.match(prompt, /Never write checks about wording, formatting/);
   assert.doesNotMatch(generationPrompt({ name: 'x', description: 'd' }), /<reference>/);
+});
+
+test('headroom keeps only cases the bare model mostly fails, hardest first', () => {
+  const run = (score: number) => ({ score, graders: [] });
+  const pilot = {
+    costUsd: 1,
+    cases: [
+      { name: 'easy', arms: { with: [run(1)] } },
+      { name: 'hard', arms: { with: [run(0.4)] } },
+      { name: 'edge', arms: { with: [run(0.7)] } },
+      { name: 'mid', arms: { with: [run(0.75)] } },
+      { name: 'unscored', arms: { with: [{ graders: [] }] } },
+    ],
+  };
+  assert.deepEqual(pickHeadroom(pilot as never), { kept: ['hard', 'edge'], scores: [0.4, 0.7] });
 });
