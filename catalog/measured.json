@@ -770,27 +770,24 @@
   "id": "anthropics/skills:skills/skill-creator",
   "mode": "text",
   "sha": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
-  "measuredAt": "2026-09-29T16:12:45.587Z",
+  "measuredAt": "2026-09-29T17:56:22.547Z",
   "model": "opus",
-  "runs": 2,
-  "cases": 4,
-  "withScore": 0.888,
-  "withoutScore": 0.725,
-  "delta": 0.162,
-  "firedRate": 0.75,
-  "costUsd": 10.003,
+  "runs": 0,
+  "cases": 0,
+  "withScore": 0.801,
+  "withoutScore": 0.801,
+  "delta": 0,
+  "firedRate": 0,
+  "costUsd": 3.718,
   "partial": false,
-  "ceiling": false,
-  "discriminatingChecks": 6,
-  "focusedDelta": 0.5,
+  "ceiling": true,
+  "discriminatingChecks": 0,
+  "focusedDelta": 0,
   "headroom": {
    "candidates": 8,
-   "kept": 4,
+   "kept": 1,
    "pilotScores": [
-    0.6,
-    0.667,
-    0.667,
-    0.667
+    0.5
    ]
   }
  },
@@ -901,24 +898,24 @@
   "id": "obra/superpowers:skills/receiving-code-review",
   "mode": "text",
   "sha": "8ca22dba9a94f28898bbce59f2537ff4d87c747d",
-  "measuredAt": "2026-09-29T16:41:18.980Z",
+  "measuredAt": "2026-09-29T17:53:17.694Z",
   "model": "opus",
   "runs": 2,
   "cases": 2,
-  "withScore": 1,
-  "withoutScore": 0.575,
-  "delta": 0.425,
-  "firedRate": 1,
-  "costUsd": 5.365,
+  "withScore": 0.75,
+  "withoutScore": 0.625,
+  "delta": 0.125,
+  "firedRate": 0,
+  "costUsd": 4.83,
   "partial": false,
   "ceiling": false,
-  "discriminatingChecks": 4,
-  "focusedDelta": 1,
+  "discriminatingChecks": 3,
+  "focusedDelta": 0.333,
   "headroom": {
    "candidates": 8,
    "kept": 2,
    "pilotScores": [
-    0.5,
+    0.4,
     0.6
    ]
   }
@@ -950,26 +947,24 @@
   "id": "blader/humanizer:",
   "mode": "text",
   "sha": "225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8",
-  "measuredAt": "2026-09-29T16:02:45.983Z",
+  "measuredAt": "2026-09-29T17:56:38.817Z",
   "model": "opus",
   "runs": 2,
-  "cases": 4,
-  "withScore": 0.883,
-  "withoutScore": 0.717,
-  "delta": 0.167,
-  "firedRate": 0.625,
-  "costUsd": 6.336,
+  "cases": 2,
+  "withScore": 0.825,
+  "withoutScore": 0.775,
+  "delta": 0.05,
+  "firedRate": 1,
+  "costUsd": 4.327,
   "partial": false,
   "ceiling": false,
-  "discriminatingChecks": 7,
-  "focusedDelta": 0.5,
+  "discriminatingChecks": 4,
+  "focusedDelta": 0.125,
   "headroom": {
    "candidates": 8,
-   "kept": 4,
+   "kept": 2,
    "pilotScores": [
-    0.5,
     0.571,
-    0.667,
     0.667
    ]
   }
@@ -1103,6 +1098,440 @@
     0.5,
     0.667,
     0.667
+   ]
+  }
+ },
+ "multica-ai/andrej-karpathy-skills:skills/karpathy-guidelines#headroom": {
+  "id": "multica-ai/andrej-karpathy-skills:skills/karpathy-guidelines",
+  "mode": "text",
+  "sha": "2c606141936f1eeef17fa3043a72095b4765b9c2",
+  "measuredAt": "2026-09-29T17:13:58.232Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 4,
+  "withScore": 0.95,
+  "withoutScore": 0.875,
+  "delta": 0.075,
+  "firedRate": 0,
+  "costUsd": 9.842,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 4,
+  "focusedDelta": 0.375,
+  "headroom": {
+   "candidates": 8,
+   "kept": 4,
+   "pilotScores": [
+    0.667,
+    0.667,
+    0.667,
+    0.667
+   ]
+  }
+ },
+ "affaan-m/ECC:.agents/skills/mcp-server-patterns#headroom": {
+  "id": "affaan-m/ECC:.agents/skills/mcp-server-patterns",
+  "mode": "text",
+  "sha": "d3b8a3e908904e242ed2dbe66af62cca71131419",
+  "measuredAt": "2026-09-29T17:17:14.097Z",
+  "model": "opus",
+  "runs": 0,
+  "cases": 0,
+  "withScore": 0.836,
+  "withoutScore": 0.836,
+  "delta": 0,
+  "firedRate": 0,
+  "costUsd": 3.377,
+  "partial": false,
+  "ceiling": true,
+  "discriminatingChecks": 0,
+  "focusedDelta": 0,
+  "headroom": {
+   "candidates": 8,
+   "kept": 0,
+   "pilotScores": []
+  }
+ },
+ "coreyhaines31/marketingskills:skills/cro#headroom": {
+  "id": "coreyhaines31/marketingskills:skills/cro",
+  "mode": "text",
+  "sha": "5b2c0007766c6a1cf1d53fd8fc73e979e0821022",
+  "measuredAt": "2026-09-29T17:20:10.693Z",
+  "model": "opus",
+  "runs": 0,
+  "cases": 0,
+  "withScore": 0.821,
+  "withoutScore": 0.821,
+  "delta": 0,
+  "firedRate": 0,
+  "costUsd": 3.02,
+  "partial": false,
+  "ceiling": true,
+  "discriminatingChecks": 0,
+  "focusedDelta": 0,
+  "headroom": {
+   "candidates": 8,
+   "kept": 0,
+   "pilotScores": []
+  }
+ },
+ "coreyhaines31/marketingskills:skills/ab-testing#headroom": {
+  "id": "coreyhaines31/marketingskills:skills/ab-testing",
+  "mode": "text",
+  "sha": "5b2c0007766c6a1cf1d53fd8fc73e979e0821022",
+  "measuredAt": "2026-09-29T17:26:52.853Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 3,
+  "withScore": 0.867,
+  "withoutScore": 0.8,
+  "delta": 0.067,
+  "firedRate": 1,
+  "costUsd": 9.401,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 3,
+  "focusedDelta": 0.333,
+  "headroom": {
+   "candidates": 8,
+   "kept": 3,
+   "pilotScores": [
+    0.667,
+    0.667,
+    0.667
+   ]
+  }
+ },
+ "deanpeters/Product-Manager-Skills:skills/competitive-analysis-process#headroom": {
+  "id": "deanpeters/Product-Manager-Skills:skills/competitive-analysis-process",
+  "mode": "text",
+  "sha": "1b5a524ebb95e9497fa3f25002d8b8ec528d4444",
+  "measuredAt": "2026-09-29T17:36:17.839Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 4,
+  "withScore": 0.775,
+  "withoutScore": 0.775,
+  "delta": 0,
+  "firedRate": 0.25,
+  "costUsd": 15.454,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 6,
+  "focusedDelta": 0,
+  "headroom": {
+   "candidates": 8,
+   "kept": 4,
+   "pilotScores": [
+    0.5,
+    0.667,
+    0.667,
+    0.667
+   ]
+  }
+ },
+ "wshobson/agents:plugins/backend-development/skills/api-design-principles#headroom": {
+  "id": "wshobson/agents:plugins/backend-development/skills/api-design-principles",
+  "mode": "text",
+  "sha": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
+  "measuredAt": "2026-09-29T17:38:48.501Z",
+  "model": "opus",
+  "runs": 0,
+  "cases": 0,
+  "withScore": 0.833,
+  "withoutScore": 0.833,
+  "delta": 0,
+  "firedRate": 0,
+  "costUsd": 3.062,
+  "partial": false,
+  "ceiling": true,
+  "discriminatingChecks": 0,
+  "focusedDelta": 0,
+  "headroom": {
+   "candidates": 8,
+   "kept": 0,
+   "pilotScores": []
+  }
+ },
+ "anthropics/skills:skills/mcp-builder#headroom": {
+  "id": "anthropics/skills:skills/mcp-builder",
+  "mode": "text",
+  "sha": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
+  "measuredAt": "2026-09-29T17:42:08.312Z",
+  "model": "opus",
+  "runs": 0,
+  "cases": 0,
+  "withScore": 0.923,
+  "withoutScore": 0.923,
+  "delta": 0,
+  "firedRate": 0,
+  "costUsd": 5.057,
+  "partial": false,
+  "ceiling": true,
+  "discriminatingChecks": 0,
+  "focusedDelta": 0,
+  "headroom": {
+   "candidates": 8,
+   "kept": 0,
+   "pilotScores": []
+  }
+ },
+ "obra/superpowers:skills/systematic-debugging#headroom": {
+  "id": "obra/superpowers:skills/systematic-debugging",
+  "mode": "text",
+  "sha": "8ca22dba9a94f28898bbce59f2537ff4d87c747d",
+  "measuredAt": "2026-09-29T17:49:26.630Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 4,
+  "withScore": 0.7,
+  "withoutScore": 0.7,
+  "delta": 0,
+  "firedRate": 0,
+  "costUsd": 12.704,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 7,
+  "focusedDelta": 0,
+  "headroom": {
+   "candidates": 8,
+   "kept": 4,
+   "pilotScores": [
+    0.333,
+    0.5,
+    0.667,
+    0.667
+   ]
+  }
+ },
+ "affaan-m/ECC:.kiro/skills/database-migrations#headroom": {
+  "id": "affaan-m/ECC:.kiro/skills/database-migrations",
+  "mode": "text",
+  "sha": "d3b8a3e908904e242ed2dbe66af62cca71131419",
+  "measuredAt": "2026-09-29T17:11:45.664Z",
+  "model": "opus",
+  "runs": 0,
+  "cases": 0,
+  "withScore": 0.788,
+  "withoutScore": 0.788,
+  "delta": 0,
+  "firedRate": 0,
+  "costUsd": 3.402,
+  "partial": false,
+  "ceiling": true,
+  "discriminatingChecks": 0,
+  "focusedDelta": 0,
+  "headroom": {
+   "candidates": 8,
+   "kept": 1,
+   "pilotScores": [
+    0.6
+   ]
+  }
+ },
+ "affaan-m/ECC:.agents/skills/verification-loop#headroom": {
+  "id": "affaan-m/ECC:.agents/skills/verification-loop",
+  "mode": "text",
+  "sha": "d3b8a3e908904e242ed2dbe66af62cca71131419",
+  "measuredAt": "2026-09-29T17:14:11.412Z",
+  "model": "opus",
+  "runs": 0,
+  "cases": 0,
+  "withScore": 0.773,
+  "withoutScore": 0.773,
+  "delta": 0,
+  "firedRate": 0,
+  "costUsd": 1.917,
+  "partial": false,
+  "ceiling": true,
+  "discriminatingChecks": 0,
+  "focusedDelta": 0,
+  "headroom": {
+   "candidates": 8,
+   "kept": 1,
+   "pilotScores": [
+    0.6
+   ]
+  }
+ },
+ "coreyhaines31/marketingskills:skills/copywriting#headroom": {
+  "id": "coreyhaines31/marketingskills:skills/copywriting",
+  "mode": "text",
+  "sha": "5b2c0007766c6a1cf1d53fd8fc73e979e0821022",
+  "measuredAt": "2026-09-29T17:20:55.251Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 4,
+  "withScore": 0.894,
+  "withoutScore": 0.725,
+  "delta": 0.169,
+  "firedRate": 1,
+  "costUsd": 10.792,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 5,
+  "focusedDelta": 0.6,
+  "headroom": {
+   "candidates": 8,
+   "kept": 4,
+   "pilotScores": [
+    0.5,
+    0.6,
+    0.6,
+    0.667
+   ]
+  }
+ },
+ "coreyhaines31/marketingskills:skills/ai-seo#headroom": {
+  "id": "coreyhaines31/marketingskills:skills/ai-seo",
+  "mode": "text",
+  "sha": "5b2c0007766c6a1cf1d53fd8fc73e979e0821022",
+  "measuredAt": "2026-09-29T17:27:35.632Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 3,
+  "withScore": 0.733,
+  "withoutScore": 0.7,
+  "delta": 0.033,
+  "firedRate": 1,
+  "costUsd": 10.727,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 8,
+  "focusedDelta": 0.063,
+  "headroom": {
+   "candidates": 8,
+   "kept": 3,
+   "pilotScores": [
+    0.333,
+    0.5,
+    0.667
+   ]
+  }
+ },
+ "deanpeters/Product-Manager-Skills:skills/customer-journey-map#headroom": {
+  "id": "deanpeters/Product-Manager-Skills:skills/customer-journey-map",
+  "mode": "text",
+  "sha": "1b5a524ebb95e9497fa3f25002d8b8ec528d4444",
+  "measuredAt": "2026-09-29T17:33:40.381Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 2,
+  "withScore": 0.825,
+  "withoutScore": 0.725,
+  "delta": 0.1,
+  "firedRate": 1,
+  "costUsd": 8.295,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 3,
+  "focusedDelta": 0.333,
+  "headroom": {
+   "candidates": 8,
+   "kept": 2,
+   "pilotScores": [
+    0.6,
+    0.667
+   ]
+  }
+ },
+ "wshobson/agents:plugins/blockchain-web3/skills/solidity-security#headroom": {
+  "id": "wshobson/agents:plugins/blockchain-web3/skills/solidity-security",
+  "mode": "text",
+  "sha": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
+  "measuredAt": "2026-09-29T17:38:01.815Z",
+  "model": "opus",
+  "runs": 0,
+  "cases": 0,
+  "withScore": 0.812,
+  "withoutScore": 0.812,
+  "delta": 0,
+  "firedRate": 0,
+  "costUsd": 4.982,
+  "partial": false,
+  "ceiling": true,
+  "discriminatingChecks": 0,
+  "focusedDelta": 0,
+  "headroom": {
+   "candidates": 8,
+   "kept": 1,
+   "pilotScores": [
+    0.667
+   ]
+  }
+ },
+ "wshobson/agents:plugins/backend-development/skills/microservices-patterns#headroom": {
+  "id": "wshobson/agents:plugins/backend-development/skills/microservices-patterns",
+  "mode": "text",
+  "sha": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
+  "measuredAt": "2026-09-29T17:42:36.644Z",
+  "model": "opus",
+  "runs": 0,
+  "cases": 0,
+  "withScore": 0.842,
+  "withoutScore": 0.842,
+  "delta": 0,
+  "firedRate": 0,
+  "costUsd": 4.382,
+  "partial": false,
+  "ceiling": true,
+  "discriminatingChecks": 0,
+  "focusedDelta": 0,
+  "headroom": {
+   "candidates": 8,
+   "kept": 0,
+   "pilotScores": []
+  }
+ },
+ "anthropics/skills:skills/brand-guidelines#headroom": {
+  "id": "anthropics/skills:skills/brand-guidelines",
+  "mode": "text",
+  "sha": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
+  "measuredAt": "2026-09-29T17:47:01.691Z",
+  "model": "opus",
+  "runs": 0,
+  "cases": 0,
+  "withScore": 0.828,
+  "withoutScore": 0.828,
+  "delta": 0,
+  "firedRate": 0,
+  "costUsd": 3.999,
+  "partial": false,
+  "ceiling": true,
+  "discriminatingChecks": 0,
+  "focusedDelta": 0,
+  "headroom": {
+   "candidates": 8,
+   "kept": 1,
+   "pilotScores": [
+    0.667
+   ]
+  }
+ },
+ "obra/superpowers:skills/writing-skills#headroom": {
+  "id": "obra/superpowers:skills/writing-skills",
+  "mode": "text",
+  "sha": "8ca22dba9a94f28898bbce59f2537ff4d87c747d",
+  "measuredAt": "2026-09-29T17:52:28.509Z",
+  "model": "opus",
+  "runs": 2,
+  "cases": 3,
+  "withScore": 1,
+  "withoutScore": 0.617,
+  "delta": 0.383,
+  "firedRate": 1,
+  "costUsd": 6.688,
+  "partial": false,
+  "ceiling": false,
+  "discriminatingChecks": 7,
+  "focusedDelta": 0.786,
+  "headroom": {
+   "candidates": 8,
+   "kept": 3,
+   "pilotScores": [
+    0.333,
+    0.333,
+    0.6
    ]
   }
  }
