@@ -19,6 +19,8 @@ interface Sources {
   exclude: string[];
   /** Skill ids dropped after a red flag was confirmed by hand. */
   excludeSkills?: string[];
+  /** Skill id to the fingerprint of flags a person reviewed and found benign; a changed finding is held again. */
+  clearedFlags?: Record<string, string>;
 }
 
 interface RepoInfo {
@@ -49,6 +51,8 @@ const MIN_QUALITY = 25;
 const STALE_DAYS = 730;
 const STALE_MIN_STARS = 50;
 const SKIP_PATH = /(^|\/)(node_modules|vendor|dist|build|\.git)\//;
+/** A SKILL.md under a test or fixture directory is test data, often a deliberately malicious sample, never an installable skill. */
+const TEST_DIR = /(^|\/)(tests?|__tests__|fixtures?|__fixtures__|test[_-]skills|testdata)(\/|$)/i;
 
 async function pool<T, R>(items: readonly T[], size: number, run: (item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = new Array(items.length);
@@ -110,6 +114,7 @@ export function groupFiles(tree: readonly TreeEntry[]): Map<string, SkillFile[]>
   const dirs = blobs
     .filter((entry) => entry.path === 'SKILL.md' || entry.path.endsWith('/SKILL.md'))
     .map((entry) => (entry.path === 'SKILL.md' ? '' : entry.path.slice(0, -'/SKILL.md'.length)))
+    .filter((dir) => !TEST_DIR.test(dir))
     .sort((a, b) => b.length - a.length);
   const groups = new Map<string, SkillFile[]>(dirs.map((dir) => [dir, []]));
   for (const blob of blobs) {
@@ -122,7 +127,19 @@ export function groupFiles(tree: readonly TreeEntry[]): Map<string, SkillFile[]>
   return groups;
 }
 
-async function crawlRepo(fullName: string, known: RepoInfo | null, now: number, failures: string[]): Promise<CatalogSkill[]> {
+/** Stable over crawls while the flagged lines stay the same; any new or edited finding changes it. */
+export function flagFingerprint(flags: readonly { rule: string; path: string; snippet: string }[]): string {
+  const lines = flags.map((flag) => `${flag.rule}|${flag.path}|${flag.snippet}`).sort();
+  return createHash('sha256').update(lines.join('\n')).digest('hex').slice(0, 16);
+}
+
+async function crawlRepo(
+  fullName: string,
+  known: RepoInfo | null,
+  now: number,
+  failures: string[],
+  cleared: Readonly<Record<string, string>> = {},
+): Promise<CatalogSkill[]> {
   const repo = known ?? (await api<RepoInfo>(`/repos/${fullName}`));
   if (repo.archived || repo.fork) return [];
   const sha = await headSha(repo.full_name, repo.default_branch);
@@ -176,7 +193,7 @@ async function crawlRepo(fullName: string, known: RepoInfo | null, now: number, 
     }
     const flags = redFlags(scanned);
     // The evidence stays private until a person has checked it: the public catalog only says the skill is held.
-    if (flags.length) {
+    if (flags.length && cleared[`${repo.full_name}:${dir}`] !== flagFingerprint(flags)) {
       classification.risk = 'review';
       classification.reasons.push(HELD_REASON);
     }
@@ -233,7 +250,7 @@ export async function crawl(options: { repos?: string[]; log?: (line: string) =>
   let done = 0;
   const found = await pool(repos, 8, async (repo) => {
     try {
-      return await crawlRepo(repo, discovered.get(repo) ?? null, now, failures);
+      return await crawlRepo(repo, discovered.get(repo) ?? null, now, failures, sources.clearedFlags ?? {});
     } catch (error) {
       log(`skip ${repo}: ${error instanceof Error ? error.message : String(error)}`);
       return [];

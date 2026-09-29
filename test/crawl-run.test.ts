@@ -196,3 +196,13 @@ test('red-flag evidence stays out of the published catalog', async () => {
   assert.deepEqual(flags['acme/skills:skills/sync']?.map((flag) => [flag.path, flag.line]), [['scripts/run.sh', 1]]);
   assert.equal(flags['acme/skills:skills/sql'], undefined);
 });
+
+test('skills under test or fixture directories are never catalogued', async () => {
+  repos['acme/skills'] = repo('acme/skills', {
+    'skills/sql/SKILL.md': skillMd('sql'),
+    'tests/fixtures/poisoned/SKILL.md': skillMd('poisoned'),
+    'evals/test_skills/malicious/SKILL.md': skillMd('malicious'),
+  });
+  const { catalog } = await crawl({ repos: ['acme/skills'] });
+  assert.deepEqual(catalog.skills.map((skill) => skill.name), ['sql']);
+});

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { groupFiles, parseLsRemote, prune } from '../src/crawl.ts';
+import { flagFingerprint, groupFiles, parseLsRemote, prune } from '../src/crawl.ts';
 import { quality } from '../src/score.ts';
 import { skill } from './fixtures.ts';
 
@@ -50,4 +50,11 @@ test('ls-remote: only the exact branch ref counts', () => {
   const out = `${'7'.repeat(40)}\trefs/heads/a/refs/heads/main\n${'c'.repeat(40)}\trefs/heads/main\n`;
   assert.equal(parseLsRemote(out, 'main'), 'c'.repeat(40));
   assert.equal(parseLsRemote(out, 'dev'), null);
+});
+
+test('flag fingerprint ignores order and changes with any finding', () => {
+  const a = { rule: 'r', path: 'SKILL.md', snippet: 'x' };
+  const b = { rule: 'r', path: 'ref.md', snippet: 'y' };
+  assert.equal(flagFingerprint([a, b]), flagFingerprint([b, a]));
+  assert.notEqual(flagFingerprint([a, b]), flagFingerprint([a, { ...b, snippet: 'y2' }]));
 });
