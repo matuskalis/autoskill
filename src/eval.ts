@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { install } from './install.ts';
+import { loadTimeRisks } from './safety.ts';
 import { oneLine } from './text.ts';
 import type { CatalogSkill } from './types.ts';
 
@@ -181,6 +182,8 @@ export async function evaluate(
   try {
     const installed = await install(skill, { yes: true, root: work });
     const pluginDir = join(work, installed.name);
+    const risks = loadTimeRisks(readFileSync(join(pluginDir, 'SKILL.md'), 'utf8'));
+    if (risks.length) throw new Error(`${skill.id} is not evaluated: loading it would act on this machine (${risks.join('; ')})`);
     options.log(`staged ${skill.id} @ ${skill.sha.slice(0, 7)}`);
 
     const cases = parseCases(await claudeText(generationPrompt(skill), options.model));

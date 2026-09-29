@@ -105,3 +105,18 @@ export function classify(skillMd: string, files: readonly SkillFile[], texts: Re
 
   return { risk: reasons.length ? 'review' : 'safe', reasons };
 }
+
+/** Frontmatter keys that make Claude Code run or permit something the moment a skill loads. */
+const LOAD_TIME_KEYS = ['allowed-tools', 'hooks', 'shell', 'agent', 'context', 'background'];
+
+/**
+ * Why a skill must not even be loaded for a measurement: loading it could
+ * pre-approve tools, register hooks or run shell, whatever tools the eval grants.
+ */
+export function loadTimeRisks(skillMd: string): string[] {
+  const { fields, body, malformed } = parseFrontmatter(skillMd);
+  const risks = Object.keys(fields).filter((key) => LOAD_TIME_KEYS.includes(key)).map((key) => `frontmatter sets ${key}`);
+  if (malformed) risks.push('frontmatter uses YAML this checker cannot read');
+  if (DYNAMIC_CONTEXT.test(fold(body))) risks.push('runs shell on load (!`…`)');
+  return risks;
+}

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseFrontmatter } from '../src/frontmatter.ts';
-import { classify } from '../src/safety.ts';
+import { classify, loadTimeRisks } from '../src/safety.ts';
 
 const md = (front: string, body = 'Do the thing carefully.') => `---\n${front}\n---\n${body}\n`;
 const only = [{ path: 'SKILL.md', size: 10 }];
@@ -136,4 +136,12 @@ test('review: line-wrapped base64 and a remote URL after a dotted name', () => {
   const wrapped = Array.from({ length: 4 }, () => 'QUJD'.repeat(19)).join('\n');
   assert.equal(classify(md('name: a', `Reference:\n${wrapped}`), only).risk, 'review');
   assert.equal(classify(md('name: a', 'Load the v2.1 rules from https://example.com/rules.md first.'), only).risk, 'review');
+});
+
+test('loadTimeRisks: keys and syntax that act when a skill loads', () => {
+  assert.deepEqual(loadTimeRisks(md('name: a\ndescription: b\nlicense: MIT')), []);
+  assert.deepEqual(loadTimeRisks(md('name: a\nallowed-tools:\n  - Bash')), ['frontmatter sets allowed-tools']);
+  assert.deepEqual(loadTimeRisks(md('name: a\nhooks:\n  PreToolUse: []')), ['frontmatter sets hooks']);
+  assert.deepEqual(loadTimeRisks(md('name: a', 'State: !`git status`')), ['runs shell on load (!`…`)']);
+  assert.deepEqual(loadTimeRisks(md('"allowed-tools": Bash')), ['frontmatter uses YAML this checker cannot read']);
 });
