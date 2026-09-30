@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BUNDLED_CATALOG_DIR, CATALOG_BASE_URL, stateDir } from './paths.ts';
 import { buildPostings, type Postings, type Searchable } from './search.ts';
@@ -26,12 +26,43 @@ function read<T extends Versioned>(path: string): T | null {
   }
 }
 
-/** The newer of the downloaded copy and the one shipped with the package. */
+const empty = <T extends Versioned>() => ({ version: 1, generatedAt: '1970-01-01T00:00:00.000Z', skills: [] }) as unknown as T;
+
+/** `generatedAt` from the first bytes of a file, so picking the newer copy does not parse both. */
+function peekGeneratedAt(path: string): string | null {
+  try {
+    const fd = openSync(path, 'r');
+    try {
+      const head = Buffer.alloc(160);
+      const length = readSync(fd, head, 0, head.length, 0);
+      return /^\{\s*"version"\s*:\s*1\s*,\s*"generatedAt"\s*:\s*"([0-9TZ:.+-]+)"/.exec(head.toString('utf8', 0, length))?.[1] ?? null;
+    } finally {
+      closeSync(fd);
+    }
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The newer of the downloaded copy and the one shipped with the package. Each
+ * is 15 to 30 MB of JSON and the hook runs on every prompt, so when both
+ * timestamps can be read up front only the winner is parsed; the other is a
+ * fallback for a winner that turns out to be unreadable.
+ */
 function load<T extends Versioned>(file: CatalogFile): T {
-  const cached = read<T>(join(stateDir(), file));
-  const bundled = read<T>(join(BUNDLED_CATALOG_DIR, file));
+  const cachedPath = join(stateDir(), file);
+  const bundledPath = join(BUNDLED_CATALOG_DIR, file);
+  const cachedAt = peekGeneratedAt(cachedPath);
+  const bundledAt = peekGeneratedAt(bundledPath);
+  if (cachedAt !== null && bundledAt !== null) {
+    const [first, second] = cachedAt >= bundledAt ? [cachedPath, bundledPath] : [bundledPath, cachedPath];
+    return read<T>(first) ?? read<T>(second) ?? empty<T>();
+  }
+  const cached = read<T>(cachedPath);
+  const bundled = read<T>(bundledPath);
   if (cached && (!bundled || cached.generatedAt >= bundled.generatedAt)) return cached;
-  return bundled ?? cached ?? ({ version: 1, generatedAt: '1970-01-01T00:00:00.000Z', skills: [] } as unknown as T);
+  return bundled ?? cached ?? empty<T>();
 }
 
 export const loadCatalog = () => load<Catalog>('catalog.json');
