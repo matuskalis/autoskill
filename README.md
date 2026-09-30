@@ -114,9 +114,9 @@ Measured on an M1 Pro on 30 Sep 2026.
 | what | value | check it |
 |---|---|---|
 | catalog | 24,305 skills from 775 repositories, every one pinned to a full 40-character commit, 1,998 (8.2%) safe-tier, quality median 78 | `catalog/catalog.json` |
-| hook cost | median 0.33 s of CPU per prompt over 15 runs, end to end (Node start, loading the index, ranking) | `time` around `autoskill hook` |
+| hook cost | median 0.29 s of CPU per prompt over 12 runs, end to end (Node start, loading the index, ranking); the Stop hook, which runs after every reply, 0.14 s | `time` around `autoskill hook` |
 | ranking | 6.7% fire rate on silent prompts, 69.6% top-1 precision, 59.4% recall, F1 0.641 on 156 labelled prompts | `pnpm bench` |
-| tests | 141 passing in about 3 s, on Node 24.5 and 22.22, with the network blocked; a run writes nothing under `HOME` | `pnpm test` |
+| tests | 142 passing in about 3 s, on Node 24.5 and 22.22, with the network blocked; a run writes nothing under `HOME` | `pnpm test` |
 | catalog refresh | about 10 MB gzipped (6.0 catalog, 4.1 index) | `autoskill update` |
 | measurements | 73 results for 61 skills; 0 usable by the hook today | `autoskill doctor` |
 | field ratings | none received yet | `field.json` on the `catalog` branch |
@@ -138,7 +138,7 @@ Measured on an M1 Pro on 30 Sep 2026.
 
 ```
 pnpm install
-pnpm test          # 141 tests, no network
+pnpm test          # 142 tests, no network
 pnpm typecheck
 pnpm bench         # the hook benchmark CI gates on
 node scripts/demo.ts   # re-records docs/demo (one install needs the network)
