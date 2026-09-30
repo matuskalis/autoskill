@@ -29,7 +29,7 @@ function read<T extends Versioned>(path: string): T | null {
 const empty = <T extends Versioned>() => ({ version: 1, generatedAt: '1970-01-01T00:00:00.000Z', skills: [] }) as unknown as T;
 
 /** `generatedAt` from the first bytes of a file, so picking the newer copy does not parse both. */
-function peekGeneratedAt(path: string): string | null {
+export function peekGeneratedAt(path: string): string | null {
   try {
     const fd = openSync(path, 'r');
     try {
