@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, test } from 'node:test';
 import { writeCatalog } from '../src/catalog.ts';
+import { checkHookLatency } from '../src/doctor.ts';
 import { runHook } from '../src/hook.ts';
 import { skill } from './fixtures.ts';
 
@@ -81,4 +82,12 @@ test('AUTOSKILL_DISABLE keeps the hook out of autoskill\'s own headless runs', (
   } finally {
     delete process.env.AUTOSKILL_DISABLE;
   }
+});
+
+test('autoskill doctor times the hook without starting the daily catalog download', () => {
+  // A state dir with no index.json looks stale, so a real hook run would start the refresh and leave this stamp.
+  const bare = tempDir('bare');
+  process.env.AUTOSKILL_HOME = bare;
+  assert.match(checkHookLatency().detail, /s on a fixed prompt/);
+  assert.equal(existsSync(join(bare, 'last-update-attempt')), false);
 });

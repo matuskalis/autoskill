@@ -200,7 +200,7 @@ export function checkSettings(): CheckResult {
 export function checkHookLatency(): CheckResult {
   if (process.env.AUTOSKILL_DISABLE) return { name: 'hook latency', status: 'warn', detail: 'AUTOSKILL_DISABLE is set, the hook does nothing', fix: 'unset AUTOSKILL_DISABLE' };
   const start = performance.now();
-  runHook({ prompt: LATENCY_PROMPT });
+  runHook({ prompt: LATENCY_PROMPT }, { refresh: false });
   const seconds = (performance.now() - start) / 1000;
   const detail = `${seconds.toFixed(3)} s on a fixed prompt`;
   return seconds > SLOW_HOOK_SECONDS
