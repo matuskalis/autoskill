@@ -1,6 +1,6 @@
 {
   "name": "autoskill",
-  "description": "Finds the right skill for each prompt in a rated, weekly-updated catalog of public Claude Code skills and installs it pinned to a commit.",
+  "description": "Finds the right skill for each prompt in a rated, daily-rebuilt catalog of public Claude Code skills and installs it pinned to a commit.",
   "version": "0.3.0",
   "author": { "name": "Matúš Kališ" },
   "homepage": "https://github.com/matuskalis/autoskill",
