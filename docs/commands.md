@@ -42,7 +42,7 @@ autoskill hook                    the UserPromptSubmit hook: reads JSON on stdin
 | command | request |
 |---|---|
 | `add`, `install` | the skill's files at the pinned commit from `api.github.com` (contents API), falling back to `raw.githubusercontent.com`. A token from `GITHUB_TOKEN`, `GH_TOKEN` or `gh auth token` raises the rate limit; none is needed. |
-| `update`, and the background job | `catalog.json`, `index.json`, `measured.json` and `field.json` from the `catalog` branch on `raw.githubusercontent.com`, at most once a day. |
+| `update` (on demand) and the background job (at most once a day) | `catalog.json`, `index.json`, `measured.json` and `field.json` from the `catalog` branch on `raw.githubusercontent.com`. |
 | the background job, only with `telemetry on` | one POST of verified ratings. |
 | `crawl` | the GitHub API and one tarball per repository. |
 

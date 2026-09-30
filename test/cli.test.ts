@@ -17,8 +17,9 @@ test('`add` refuses a review-tier skill even with --yes, before any download', (
   const run = (args: string[]) =>
     spawnSync(process.execPath, ['src/cli.ts', ...args], {
       encoding: 'utf8',
-      // An unroutable proxy: any network attempt would fail loudly instead of installing.
-      env: { ...process.env, CLAUDE_CONFIG_DIR: home, AUTOSKILL_HOME: state, HTTPS_PROXY: 'http://127.0.0.1:9', GITHUB_TOKEN: 'x' },
+      // An unroutable proxy: any network attempt would fail loudly instead of installing. Node's fetch
+      // ignores HTTPS_PROXY unless NODE_USE_ENV_PROXY is set.
+      env: { ...process.env, CLAUDE_CONFIG_DIR: home, AUTOSKILL_HOME: state, HTTPS_PROXY: 'http://127.0.0.1:9', NODE_USE_ENV_PROXY: '1', GITHUB_TOKEN: 'x' },
     });
   for (const args of [['add', 'acme/skills:skills/scripted'], ['add', 'acme/skills:skills/scripted', '--yes']]) {
     const result = run(args);
@@ -42,7 +43,7 @@ function sandbox() {
   const run = (...args: string[]) =>
     spawnSync(process.execPath, ['src/cli.ts', ...args], {
       encoding: 'utf8',
-      env: { ...process.env, CLAUDE_CONFIG_DIR: home, AUTOSKILL_HOME: state, HTTPS_PROXY: 'http://127.0.0.1:9', GITHUB_TOKEN: 'x' },
+      env: { ...process.env, CLAUDE_CONFIG_DIR: home, AUTOSKILL_HOME: state, HTTPS_PROXY: 'http://127.0.0.1:9', NODE_USE_ENV_PROXY: '1', GITHUB_TOKEN: 'x' },
     });
   const installFolder = (name: string, installedAt: string | null) => {
     mkdirSync(join(home, 'skills', name), { recursive: true });
