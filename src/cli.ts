@@ -44,6 +44,12 @@ function flag(args: string[], name: string): string | undefined {
   return index === -1 ? undefined : args[index + 1];
 }
 
+function days(args: string[], fallback: number): number {
+  const value = Number(flag(args, '--days') ?? fallback);
+  if (!Number.isFinite(value) || value < 0) throw new Error('--days needs a number of days, for example --days 30');
+  return value;
+}
+
 const positional = (args: string[]) => args.filter((arg, i) => !arg.startsWith('--') && !args[i - 1]?.startsWith('--days') && !args[i - 1]?.startsWith('--out') && !args[i - 1]?.startsWith('--repos') && !['--runs', '--model', '--judge', '--max-cost', '--limit'].includes(args[i - 1] ?? ''));
 
 async function run(command: string | undefined, args: string[]): Promise<void> {
@@ -103,18 +109,18 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       return;
     }
     case 'stats': {
-      const usage = await skillUsage(Number(flag(args, '--days') ?? 90));
+      const usage = await skillUsage(days(args, 90));
       const rows = [...usage].sort((a, b) => b[1].count - a[1].count);
       console.log('Uses of skills and slash commands, from local transcripts:');
       for (const [name, { count, last }] of rows) console.log(`${String(count).padStart(5)}  ${name}  last ${last.slice(0, 10)}`);
       return;
     }
     case 'prune': {
-      const days = Number(flag(args, '--days') ?? 30);
-      const cutoff = new Date(Date.now() - days * 86_400_000).toISOString();
-      const usage = await skillUsage(days + 1);
+      const limit = days(args, 30);
+      const cutoff = new Date(Date.now() - limit * 86_400_000).toISOString();
+      const usage = await skillUsage(limit + 1);
       const stale = listInstalled().filter(({ name, marker }) => marker.installedAt < cutoff && (usage.get(name)?.last ?? '') < cutoff);
-      if (!stale.length) return console.log(`nothing unused for ${days} days`);
+      if (!stale.length) return console.log(`nothing unused for ${limit} days`);
       for (const { name } of stale) {
         if (args.includes('--apply')) uninstall(name);
         console.log(`${args.includes('--apply') ? 'removed' : 'would remove'} ${name}`);
