@@ -6,7 +6,7 @@ Finds the right Claude Code skill for each prompt in a rated catalog of about 24
 
 ![A terminal: autoskill search ranks a skill for a newsletter task, add installs it pinned to commit 8a1541c, and add refuses the xlsx skill because it ships 51 non-text files](docs/demo/session.svg)
 
-*Real output, recorded on 30 Sep 2026 against a throwaway home directory by [`scripts/demo.ts`](scripts/demo.ts). Text version: [session.txt](docs/demo/session.txt).*
+*Real output of [`scripts/demo.ts`](scripts/demo.ts), recorded on 30 Sep 2026 against a throwaway home directory. Lines are wrapped at word boundaries to 110 columns and the throwaway home is shown as `~`. Same text: [session.txt](docs/demo/session.txt).*
 
 A skill is a prompt that can also ship scripts and pre-approve tools. An [audit](docs/audit-2026-09.md) of 22,746 public skills (29 Sep 2026) found that only 9.6% are plain instructions; in today's catalog it is 8.2% (1,998 of 24,305). Popularity does not say whether a skill helps, either: of 32 popular skills measured on Opus 5.5, 2 clearly helped and for 13 the model already solved the hard tasks without them ([leaderboard](docs/leaderboard.md)).
 
