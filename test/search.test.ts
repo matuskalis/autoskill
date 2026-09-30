@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { pick, render } from '../src/hook.ts';
-import { Index, tokenize } from '../src/search.ts';
+import { Index, stem, tokenize } from '../src/search.ts';
 import type { MeasuredDelta } from '../src/catalog.ts';
 import type { Catalog } from '../src/types.ts';
 import { skill } from './fixtures.ts';
@@ -112,4 +112,59 @@ test('copy bonus counts distinct owners and is capped', () => {
   const fair = hits.find((h) => h.skill.name === 'deploy-cluster');
   assert.ok(gamed && fair);
   assert.ok(gamed.score / fair.score < 1.05, `one owner with 20 repos got ${(gamed.score / fair.score).toFixed(2)}x`);
+});
+
+const fillers = catalog.skills.slice(4);
+
+test('stem trims plurals and -ing/-ed endings only on long enough words', () => {
+  assert.deepEqual(['skills', 'testing', 'reviewed'].map(stem), ['skill', 'test', 'review']);
+  assert.deepEqual(['class', 'used', 'ring', 'pass'].map(stem), ['class', 'used', 'ring', 'pass']);
+});
+
+test('a term in a skill name counts more than the same term in a description', () => {
+  const named = skill('helm-deploy', 'Ship releases to clusters.');
+  const described = skill('release-notes', 'Deploy with helm for releases.');
+  const [first, second] = new Index([described, named, ...fillers]).search('helm deploy');
+  assert.equal(first?.skill.name, 'helm-deploy');
+  assert.equal(second?.skill.name, 'release-notes');
+});
+
+test('between equal text matches the higher quality score ranks first, by the documented factor', () => {
+  const strong = skill('merge-pdf-a', 'Merge and split PDF documents quickly.', { id: 'a/x:merge-pdf-a', quality: 90 });
+  const weak = skill('merge-pdf-b', 'Merge and split PDF documents quickly.', { id: 'b/x:merge-pdf-b', quality: 40 });
+  const [first, second] = new Index([weak, strong, ...fillers]).search('merge and split pdf documents');
+  assert.equal(first?.skill.name, 'merge-pdf-a');
+  assert.ok(first && second);
+  assert.ok(Math.abs(second.score / first.score - (0.5 + 40 / 200) / (0.5 + 90 / 200)) < 1e-9);
+});
+
+test('copies of one name: quality picks the copy unless its match is far weaker than the best copy', () => {
+  const prompt = 'extract text and tables from pdf documents, fill pdf forms, merge and split pdfs';
+  const wordy = skill('pdf', 'Extract text and tables from PDF documents, fill PDF forms, merge and split PDFs.', { id: 'fork/x:skills/pdf', repo: 'fork/x', quality: 60, hash: 'h1' });
+  const close = skill('pdf', 'Extract tables from PDF documents and fill forms.', { id: 'orig/x:skills/pdf', repo: 'orig/x', quality: 90, hash: 'h2' });
+  const far = skill('pdf', 'Fill forms.', { id: 'orig2/x:skills/pdf', repo: 'orig2/x', quality: 90, hash: 'h3' });
+  assert.equal(new Index([wordy, close, ...fillers]).search(prompt)[0]?.skill.id, 'orig/x:skills/pdf');
+  assert.equal(new Index([wordy, far, ...fillers]).search(prompt)[0]?.skill.id, 'fork/x:skills/pdf');
+});
+
+test('the hook needs the skill name in the prompt: a description-only match stays silent', () => {
+  const words = 'extract the text and tables from this document and split it';
+  assert.deepEqual(pick(catalog, words, new Set()), []);
+  assert.equal(pick(catalog, words.replace('this document', 'this pdf document'), new Set())[0]?.skill.name, 'pdf');
+});
+
+test('a prompt mostly in another language stays silent even when its English keywords match', () => {
+  const mixed = 'prosím ťa vyplň všetky polia v tomto pdf form a extract tables z dokumentu';
+  assert.ok(new Index(catalog.skills).knownShare(mixed) < 0.7);
+  // Every other gate passes, so the known-share gate alone is what keeps the hook quiet.
+  assert.equal(pick(catalog, mixed, new Set(), { minKnownShare: 0 })[0]?.skill.name, 'pdf');
+  assert.deepEqual(pick(catalog, mixed, new Set()), []);
+  assert.equal(pick(catalog, 'fill this pdf form and extract the tables from the document', new Set())[0]?.skill.name, 'pdf');
+});
+
+test('the hook suggests at most three skills', () => {
+  const names = ['pdf-forms', 'pdf-merge', 'pdf-split', 'pdf-ocr', 'pdf-extract'];
+  const owned = names.map((name, i) => skill(name, `Work with PDF files: ${name.replace('pdf-', '')} pages and forms in documents.`, { id: `owner${i}/s:${name}`, repo: `owner${i}/s`, hash: `h${i}` }));
+  const hits = pick({ skills: [...owned, ...fillers] }, 'pdf forms merge split ocr extract pages in documents', new Set(), { minScore: 0 });
+  assert.equal(hits.length, 3);
 });
