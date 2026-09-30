@@ -16,6 +16,8 @@ import { join } from 'node:path';
 import { PACKAGE_ROOT } from '../src/paths.ts';
 
 const COLUMNS = 110;
+/** The hook note is pasted into a README code block inside a list, which is narrower than the image. */
+const NOTE_COLUMNS = 88;
 const TASK = 'draft internal comms for the new office policy: a company newsletter and an FAQ';
 const STEPS: string[][] = [
   ['search', TASK, '--limit', '1'],
@@ -29,13 +31,13 @@ const env = { PATH: process.env.PATH ?? '', HOME: home, CLAUDE_CONFIG_DIR: join(
 const quote = (arg: string) => (/[\s"']/.test(arg) ? `"${arg}"` : arg);
 
 /** Breaks at spaces, indenting continuation rows under the text; a word longer than a row is cut. */
-function wrap(line: string): string[] {
+function wrap(line: string, columns = COLUMNS): string[] {
   const hanging = ' '.repeat(/^\s*(- )?/.exec(line)?.[0].length ?? 0);
   const rows: string[] = [];
   let rest = line;
-  while (rest.length > COLUMNS) {
-    const space = rest.lastIndexOf(' ', COLUMNS);
-    const at = space > hanging.length ? space : COLUMNS;
+  while (rest.length > columns) {
+    const space = rest.lastIndexOf(' ', columns);
+    const at = space > hanging.length ? space : columns;
     rows.push(rest.slice(0, at));
     rest = hanging + rest.slice(at).trimStart();
   }
@@ -94,5 +96,5 @@ ${rows}
 mkdirSync(join(PACKAGE_ROOT, 'docs', 'demo'), { recursive: true });
 writeFileSync(join(PACKAGE_ROOT, 'docs', 'demo', 'session.txt'), lines.map((line) => line.text).join('\n') + '\n');
 writeFileSync(join(PACKAGE_ROOT, 'docs', 'demo', 'session.svg'), svg);
-writeFileSync(join(PACKAGE_ROOT, 'docs', 'demo', 'hook.txt'), note.split('\n').flatMap(wrap).join('\n') + '\n');
+writeFileSync(join(PACKAGE_ROOT, 'docs', 'demo', 'hook.txt'), note.split('\n').flatMap((line) => wrap(line, NOTE_COLUMNS)).join('\n') + '\n');
 console.log(`wrote docs/demo/session.txt, session.svg (${lines.length} lines, ${width}x${height}) and hook.txt`);
