@@ -1,18 +1,15 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { findSkill, loadCatalog, loadField, updateCatalog, writeCatalog } from './catalog.ts';
-import { formatAdvice, refreshAdvice, startupTip } from './advise.ts';
-import { captureRatings, consentPrompt, FEEDBACK_URL, fieldCounts, flushRatings, ratingInstruction, readConfig, setTelemetry } from './feedback.ts';
-import { crawl } from './crawl.ts';
-import { formatResult, runChecks } from './doctor.ts';
-import { assertWorkspaceAllowed, evaluate, type Measurement } from './eval.ts';
+import type { Measurement } from './eval.ts';
 import { main as hook } from './hook.ts';
-import { install, listInstalled, ReviewRequired, uninstall } from './install.ts';
 import { Index } from './search.ts';
 import { PACKAGE_ROOT, stateDir } from './paths.ts';
 import { oneLine } from './text.ts';
 import type { Catalog } from './types.ts';
-import { skillUsage } from './usage.ts';
+
+// Only what the hook needs is imported up front: the hook runs on every prompt and every module costs
+// startup time. Each other command loads its own modules when it runs.
 
 const MIN_KEPT_SHARE = 0.85;
 
@@ -55,6 +52,7 @@ const positional = (args: string[]) => args.filter((arg, i) => !arg.startsWith('
 async function run(command: string | undefined, args: string[]): Promise<void> {
   switch (command) {
     case 'search': {
+      const { listInstalled } = await import('./install.ts');
       const catalog = loadCatalog();
       const installed = new Set(listInstalled().map((skill) => skill.marker.id));
       const hits = new Index(catalog.skills).search(positional(args).join(' '), { limit: Number(flag(args, '--limit') ?? 8) });
@@ -79,6 +77,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       if (!skill) throw new Error('not in the catalog; try `autoskill search`');
       // `add` is the command a permission rule may allow: it never installs review-tier, whatever the flags.
       const yes = command === 'install' && args.includes('--yes');
+      const { install, ReviewRequired } = await import('./install.ts');
       try {
         if (command === 'add' && skill.risk === 'review') throw new ReviewRequired(skill.id, skill.riskReasons);
         const result = await install(skill, { yes });
@@ -94,11 +93,14 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       return;
     }
     case 'uninstall': {
+      const { uninstall } = await import('./install.ts');
       const name = positional(args)[0] ?? '';
       uninstall(name);
       return console.log(`removed ${name}`);
     }
     case 'list': {
+      const { listInstalled } = await import('./install.ts');
+      const { skillUsage } = await import('./usage.ts');
       const usage = await skillUsage();
       const installed = listInstalled();
       if (!installed.length) return console.log('nothing installed by autoskill yet');
@@ -109,6 +111,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       return;
     }
     case 'stats': {
+      const { skillUsage } = await import('./usage.ts');
       const usage = await skillUsage(days(args, 90));
       const rows = [...usage].sort((a, b) => b[1].count - a[1].count);
       console.log('Uses of skills and slash commands, from local transcripts:');
@@ -116,6 +119,8 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       return;
     }
     case 'prune': {
+      const { listInstalled, uninstall } = await import('./install.ts');
+      const { skillUsage } = await import('./usage.ts');
       const limit = days(args, 30);
       const cutoff = new Date(Date.now() - limit * 86_400_000).toISOString();
       const usage = await skillUsage(limit + 1);
@@ -128,6 +133,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       return;
     }
     case 'advise': {
+      const { formatAdvice, refreshAdvice } = await import('./advise.ts');
       const advice = await refreshAdvice();
       return console.log(args.includes('--json') ? JSON.stringify(advice, null, 2) : formatAdvice(advice));
     }
@@ -138,6 +144,8 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
         if (process.env.CLAUDE_CODE_SESSION_ATTENDED === '0' || process.env.AUTOSKILL_DISABLE) return;
         let input = '';
         for await (const chunk of process.stdin) input += chunk;
+        const { startupTip } = await import('./advise.ts');
+        const { consentPrompt, ratingInstruction } = await import('./feedback.ts');
         const source = (JSON.parse(input) as { source?: string }).source;
         const tip = startupTip(source);
         const parsed = tip ? (JSON.parse(tip) as { systemMessage: string; hookSpecificOutput: { additionalContext: string } }) : null;
@@ -159,6 +167,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       try {
         let input = '';
         for await (const chunk of process.stdin) input += chunk;
+        const { captureRatings } = await import('./feedback.ts');
         captureRatings(JSON.parse(input) as Parameters<typeof captureRatings>[0]);
       } catch {}
       return;
@@ -172,6 +181,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
         process.exitCode = 2;
         return;
       }
+      const { readConfig, setTelemetry } = await import('./feedback.ts');
       if (choice === 'on' || choice === 'off') setTelemetry(choice === 'on');
       const config = readConfig();
       return console.log(
@@ -182,6 +192,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
     }
     case 'field': {
       // Crawl step: the central server's counts, filtered to the catalog. A server that is down writes an empty file.
+      const { FEEDBACK_URL, fieldCounts } = await import('./feedback.ts');
       const out = flag(args, '--out') ?? 'field.json';
       const catalog = JSON.parse(readFileSync(flag(args, '--catalog') ?? 'catalog/catalog.json', 'utf8')) as Catalog;
       const rows = await fetch(FEEDBACK_URL, { signal: AbortSignal.timeout(30_000) })
@@ -193,6 +204,8 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
     }
     case 'background': {
       // The daily job the prompt hook starts: refresh the catalog, recompute advice, send verified ratings.
+      const { refreshAdvice } = await import('./advise.ts');
+      const { flushRatings } = await import('./feedback.ts');
       await updateCatalog().catch(() => null);
       await refreshAdvice().catch(() => null);
       await flushRatings().catch(() => null);
@@ -204,6 +217,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       return;
     }
     case 'crawl': {
+      const { crawl } = await import('./crawl.ts');
       const out = flag(args, '--out') ?? 'catalog';
       const repos = flag(args, '--repos')?.split(',');
       // The last published catalog; a daily run writes into a fresh directory, so `out` alone is no baseline.
@@ -221,6 +235,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       return console.log(`wrote ${catalog.skills.length} skills to ${out}/catalog.json and ${out}/index.json; ${Object.keys(flags).length} held skills' evidence to ${flagsOut}`);
     }
     case 'eval': {
+      const { assertWorkspaceAllowed, evaluate } = await import('./eval.ts');
       const catalog = loadCatalog();
       const out = flag(args, '--out') ?? 'catalog/measured.json';
       const measured = existsSync(out) ? (JSON.parse(readFileSync(out, 'utf8')) as Record<string, Measurement>) : {};
@@ -260,6 +275,7 @@ async function run(command: string | undefined, args: string[]): Promise<void> {
       return;
     }
     case 'doctor': {
+      const { formatResult, runChecks } = await import('./doctor.ts');
       const results = runChecks();
       for (const result of results) console.log(formatResult(result));
       if (results.some((result) => result.status === 'fail')) process.exitCode = 1;
