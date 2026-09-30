@@ -18,7 +18,7 @@ import { PACKAGE_ROOT } from '../src/paths.ts';
 const COLUMNS = 110;
 const TASK = 'draft internal comms for the new office policy: a company newsletter and an FAQ';
 const STEPS: string[][] = [
-  ['search', TASK, '--limit', '2'],
+  ['search', TASK, '--limit', '1'],
   ['add', 'anthropics/skills:skills/internal-comms'],
   ['add', 'anthropics/skills:skills/xlsx'],
   ['list'],
