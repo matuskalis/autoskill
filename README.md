@@ -109,7 +109,7 @@ What it never does:
 
 ## The numbers
 
-Measured on an M1 Pro, 30 Sep 2026, unless a column says otherwise.
+Measured on an M1 Pro on 30 Sep 2026.
 
 | what | value | check it |
 |---|---|---|
