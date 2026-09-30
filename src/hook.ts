@@ -158,14 +158,15 @@ function refreshInBackground() {
   child.unref();
 }
 
-export function runHook(input: HookInput): string | null {
+/** `refresh: false` is for callers that only time or inspect the hook, such as `autoskill doctor`: no background download. */
+export function runHook(input: HookInput, options: { refresh?: boolean } = {}): string | null {
   // autoskill's own headless calls (eval case generation) set this so the hook stays out of them.
   if (process.env.AUTOSKILL_DISABLE) return null;
   const prompt = input.prompt ?? '';
   const exclude = new Set([...installedNames(input.cwd), ...alreadySuggested(input.session_id)]);
   const measured = loadMeasured();
   const hits = pick(loadIndex(), prompt, exclude, {}, measured);
-  refreshInBackground();
+  if (options.refresh !== false) refreshInBackground();
   if (!hits.length) return null;
   remember(input.session_id, hits.map((hit) => hit.skill.id));
   return JSON.stringify({ hookSpecificOutput: { hookEventName: 'UserPromptSubmit', additionalContext: render(hits, measured) } });

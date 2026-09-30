@@ -3,7 +3,8 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, existsSync } from 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { loadMeasured, updateCatalog } from '../src/catalog.ts';
+import { loadIndex, loadMeasured, peekGeneratedAt, updateCatalog, writeCatalog } from '../src/catalog.ts';
+import { BUNDLED_CATALOG_DIR } from '../src/paths.ts';
 
 const entry = (delta: number, measuredAt: string, extra = {}) => ({ delta, firedRate: 1, measuredAt, sha: 'a'.repeat(40), ...extra });
 
@@ -41,4 +42,45 @@ test('updateCatalog: a missing or non-JSON measured.json does not fail the updat
     assert.equal(readFileSync(join(state, 'index.json'), 'utf8'), catalog);
   }
   mkdirSync(state, { recursive: true });
+});
+
+const indexFile = (generatedAt: string, names: string[]) => JSON.stringify({ version: 1, generatedAt, skills: names.map((name) => ({ id: `a/b:${name}`, name, description: name, risk: 'safe', quality: 50 })) });
+const withDownloaded = (text: string | null) => {
+  const state = mkdtempSync(join(tmpdir(), 'autoskill-state-'));
+  process.env.AUTOSKILL_HOME = state;
+  if (text !== null) writeFileSync(join(state, 'index.json'), text);
+  return loadIndex();
+};
+
+test('loadIndex: the newer of the downloaded and the bundled copy wins, a broken download is ignored', () => {
+  const bundled = withDownloaded(null);
+  assert.ok(bundled.skills.length > 1000, 'the bundled catalog ships with the package');
+
+  const newer = withDownloaded(indexFile('2999-01-01T00:00:00.000Z', ['from-download']));
+  assert.deepEqual(newer.skills.map((skill) => skill.name), ['from-download']);
+
+  const older = withDownloaded(indexFile('2000-01-01T00:00:00.000Z', ['from-download']));
+  assert.equal(older.generatedAt, bundled.generatedAt);
+  assert.equal(older.skills.length, bundled.skills.length);
+
+  for (const broken of ['not json', '{"version":2,"generatedAt":"2999-01-01T00:00:00.000Z","skills":[]}', '{"version":1,"generatedAt":"2999-01-01T00:00:00.000Z"']) {
+    assert.equal(withDownloaded(broken).generatedAt, bundled.generatedAt, broken);
+  }
+});
+
+test('loadIndex: a downloaded copy with the same timestamp as the bundled one is preferred, whatever the key order', () => {
+  const bundled = withDownloaded(null);
+  const reordered = JSON.stringify({ skills: [{ id: 'a/b:c', name: 'c', description: 'c', risk: 'safe', quality: 1 }], version: 1, generatedAt: bundled.generatedAt });
+  assert.deepEqual(withDownloaded(reordered).skills.map((skill) => skill.name), ['c']);
+});
+
+test('the catalog files we write and ship keep generatedAt where the loader can peek at it', () => {
+  // If this fails, load() still answers correctly but parses both copies of a 15 MB file on every prompt again.
+  const state = mkdtempSync(join(tmpdir(), 'autoskill-state-'));
+  writeCatalog({ version: 1, generatedAt: '2026-01-02T03:04:05.678Z', skills: [] }, state);
+  for (const file of ['catalog.json', 'index.json']) {
+    assert.equal(peekGeneratedAt(join(state, file)), '2026-01-02T03:04:05.678Z');
+    const bundled = join(BUNDLED_CATALOG_DIR, file);
+    assert.equal(peekGeneratedAt(bundled), (JSON.parse(readFileSync(bundled, 'utf8')) as { generatedAt: string }).generatedAt);
+  }
 });

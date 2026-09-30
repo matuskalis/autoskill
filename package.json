@@ -1,7 +1,7 @@
 {
   "name": "autoskill",
   "version": "0.3.0",
-  "description": "Finds the right Claude Code skill for each prompt in a rated, weekly-updated catalog and installs it pinned to a commit.",
+  "description": "Finds the right Claude Code skill for each prompt in a rated, daily-rebuilt catalog and installs it pinned to a commit.",
   "type": "module",
   "license": "MIT",
   "author": "Matúš Kališ",

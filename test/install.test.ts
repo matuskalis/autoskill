@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, test } from 'node:test';
@@ -11,11 +11,18 @@ import { skill } from './fixtures.ts';
 const SAFE_MD = '---\nname: notes\ndescription: Keep meeting notes tidy. Use when the user pastes notes.\n---\nSummarise, then list actions.\n';
 const sha256 = (text: string) => createHash('sha256').update(text).digest('hex');
 let remote: Record<string, string> = {};
+let requests: string[] = [];
+let apiForbidden = false;
 let home = '';
 
 process.env.GITHUB_TOKEN = 'test-token';
 globalThis.fetch = (async (url: string | URL) => {
-  const path = new URL(String(url)).pathname.split('/contents/')[1] ?? '';
+  const address = new URL(String(url));
+  requests.push(address.href);
+  const raw = address.hostname === 'raw.githubusercontent.com';
+  if (apiForbidden && !raw) return new Response('forbidden', { status: 403 });
+  // raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>, or api.github.com/repos/<owner>/<repo>/contents/<path>?ref=<sha>
+  const path = raw ? address.pathname.split('/').slice(4).join('/') : (address.pathname.split('/contents/')[1] ?? '');
   const body = remote[decodeURIComponent(path)];
   return body === undefined ? new Response('missing', { status: 404 }) : new Response(body);
 }) as typeof fetch;
@@ -24,6 +31,8 @@ beforeEach(() => {
   home = mkdtempSync(join(tmpdir(), 'autoskill-'));
   process.env.CLAUDE_CONFIG_DIR = home;
   remote = { 'skills/notes/SKILL.md': SAFE_MD, 'skills/notes/ref/tips.md': 'Short bullets.' };
+  requests = [];
+  apiForbidden = false;
 });
 
 const notes = (extra = {}) =>
@@ -101,4 +110,67 @@ test('usage counts Skill calls, typed commands and SKILL.md reads', async () => 
   assert.deepEqual(usage.get('notes'), { count: 3, last: '2026-09-05T10:00:00Z' });
   assert.equal(usage.get('verify')?.count, 1);
   assert.equal(usage.get('pdf')?.count, 1);
+});
+
+test('every download is pinned to the catalog commit, through the API and through the raw fallback', async () => {
+  const pinned = 'c'.repeat(40);
+  await install(notes({ sha: pinned }));
+  assert.equal(requests.length, 2);
+  assert.ok(requests.every((url) => new URL(url).searchParams.get('ref') === pinned), requests.join('\n'));
+
+  requests = [];
+  apiForbidden = true;
+  await install(notes({ sha: pinned }), { root: join(home, 'elsewhere') });
+  const raw = requests.filter((url) => new URL(url).hostname === 'raw.githubusercontent.com');
+  assert.equal(raw.length, 2);
+  assert.ok(raw.every((url) => new URL(url).pathname.split('/')[3] === pinned), raw.join('\n'));
+});
+
+test('a catalog commit that is not a full 40 character id is refused before any download', async () => {
+  for (const sha of ['main', 'HEAD', 'abc1234', 'A'.repeat(40), 'a'.repeat(39), 'a'.repeat(41)]) {
+    await assert.rejects(install(notes({ sha })), /malformed repo or commit/, sha);
+  }
+  assert.equal(requests.length, 0);
+  assert.equal(existsSync(join(home, 'skills')), false);
+});
+
+test('a newer pinned commit replaces the skill, and a file that vanished upstream vanishes here too', async () => {
+  await install(notes());
+  const second = '---\nname: notes\ndescription: Keep meeting notes tidy, version two.\n---\nSummarise, then list owners.\n';
+  remote = { 'skills/notes/SKILL.md': second };
+  const result = await install(notes({ sha: 'b'.repeat(40), hash: sha256(second), files: [{ path: 'SKILL.md', size: second.length }] }));
+  assert.equal(result.status, 'updated');
+  assert.equal(readFileSync(result.skillMd, 'utf8'), second);
+  assert.equal(existsSync(join(home, 'skills/notes/ref/tips.md')), false);
+  assert.equal(listInstalled()[0]?.marker.sha, 'b'.repeat(40));
+  assert.deepEqual(readdirSync(join(home, 'skills')), ['notes']);
+});
+
+test('two different skills that share a folder name never overwrite each other', async () => {
+  await install(notes());
+  await assert.rejects(install(notes({ id: 'other/skills:skills/notes', repo: 'other/skills' })), /already installed from acme\/skills:skills\/notes/);
+  assert.equal(listInstalled()[0]?.marker.repo, 'acme/skills');
+});
+
+test('file-count and size limits and a missing SKILL.md stop an install before any download', async () => {
+  const sixtyOne = Array.from({ length: 61 }, (_, i) => ({ path: i ? `ref/f${i}.md` : 'SKILL.md', size: 1 }));
+  await assert.rejects(install(notes({ files: sixtyOne })), /limit 60/);
+  await assert.rejects(install(notes({ files: [{ path: 'SKILL.md', size: 3_000_001 }] })), /over 3000000 bytes/);
+  await assert.rejects(install(notes({ files: [{ path: 'README.md', size: 1 }] })), /no SKILL\.md/);
+  assert.equal(requests.length, 0);
+});
+
+test('a download that fails half way, or fails the hash, leaves nothing behind', async () => {
+  delete remote['skills/notes/ref/tips.md'];
+  await assert.rejects(install(notes()), /HTTP 404/);
+  remote['skills/notes/ref/tips.md'] = 'Short bullets.';
+  await assert.rejects(install(notes({ hash: 'f'.repeat(64) })), /catalog hash/);
+  assert.deepEqual(existsSync(join(home, 'skills')) ? readdirSync(join(home, 'skills')) : [], []);
+});
+
+test('a skill that lives at the repository root installs from the root', async () => {
+  remote = { 'SKILL.md': SAFE_MD };
+  const solo = skill('notes', 'Keep meeting notes tidy.', { id: 'acme/solo:', repo: 'acme/solo', dir: '', files: [{ path: 'SKILL.md', size: SAFE_MD.length }], hash: sha256(SAFE_MD) });
+  assert.equal((await install(solo)).status, 'installed');
+  assert.match(requests[0] ?? '', /\/repos\/acme\/solo\/contents\/SKILL\.md\?ref=a{40}$/);
 });

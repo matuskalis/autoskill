@@ -1,5 +1,5 @@
 /**
- * Prints catalog/measured.json as a markdown table for the README.
+ * Prints catalog/measured.json as a markdown table for docs/measured-uplift.md.
  *
  *   node scripts/measured-table.ts [path]
  */

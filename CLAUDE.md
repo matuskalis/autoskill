@@ -5,6 +5,8 @@ Claude Code plugin: a rated catalog of public skills, a `UserPromptSubmit` hook 
 - Zero runtime dependencies. Node 22.18+ runs the TypeScript directly (type stripping), so only erasable syntax: no enums, no namespaces, no parameter properties, imports end in `.ts`.
 - `pnpm test` and `pnpm typecheck` before every commit. Tests never touch the network: they stub `globalThis.fetch` and point `CLAUDE_CONFIG_DIR` at a temp dir.
 - The hook must never block or slow a prompt: local only, no network in the foreground, any error exits 0 with empty stdout. It stays silent on most prompts; the gates in `src/hook.ts` were set with `scripts/bench-hook.ts` on a labelled synthetic prompt set.
+- `src/cli.ts` imports only what the hook needs at the top (`catalog`, `hook`, `search`, `paths`, `text`). Every other module loads inside the command that uses it, because the hook runs on every prompt and the Stop hook after every reply. Keep it that way: a new static import there costs every prompt.
+- `serialize` in `src/catalog.ts` keeps `generatedAt` right after `version`: `load()` peeks at it to parse only the newer catalog copy. `test/catalog.test.ts` fails if it moves.
 - Catalog text is untrusted. Anything shown to the model is flattened, truncated and labelled as data (`render` in `src/hook.ts`).
 - `safe` means the skill cannot run anything by itself. Loosening `src/safety.ts` needs a test showing why the new case cannot execute code or widen permissions.
 - The installer never writes into or deletes a skill folder without its `.autoskill.json` marker.
